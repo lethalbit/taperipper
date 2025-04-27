@@ -1,0 +1,9 @@
+[package]
+name = "tinypng"
+version = "0.1.0"
+edition = "2024"
+license = "BSD-3-Clause"
+
+[dependencies]
+miniz_oxide       = { version = "0.8.8", default-features = false }
+embedded-graphics = "0.8.0"

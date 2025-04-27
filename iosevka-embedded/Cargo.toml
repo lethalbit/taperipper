@@ -1,0 +1,15 @@
+[package]
+name        = "iosevka-embedded"
+version     = "0.1.0"
+edition     = "2024"
+description = "Iosevka font for embedded-graphics"
+
+[dependencies]
+embedded-graphics = "0.8.1"
+eg-bdf            = { git = "https://github.com/embedded-graphics/bdf", branch = "master" }
+
+[build-dependencies]
+eg-font-converter = { git = "https://github.com/embedded-graphics/bdf", branch = "master" }
+reqwest           = { version = "0.12.15", features = ["blocking"] }
+rc-zip            = "5.3.1"
+rc-zip-sync       = "4.3.0"

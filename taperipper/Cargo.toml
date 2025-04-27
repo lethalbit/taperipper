@@ -1,0 +1,37 @@
+[package]
+name    = "taperipper"
+version = "0.1.0"
+edition = "2024"
+license = "BSD-3-Clause"
+
+[dependencies]
+# UEFI and HW Support
+acpi     = "5.2.0"
+uefi     = { version = "0.34.1", features = ["alloc"] }
+uefi-raw = "0.10.0"
+
+# Logging
+tracing            = { version = "0.1.41", default-features = false }
+tracing-core       = { version = "0.1.33", default-features = false }
+tracing-subscriber = { version = "0.3.19", default-features = false, features = ["alloc", "std", "registry"]}
+log                = { version = "0.4.27", default-features = false }
+
+# Embedded-Graphics for fancy
+embedded-graphics = "0.8.1"
+eg-bdf            = { git = "https://github.com/embedded-graphics/bdf", branch = "master" }
+iosevka-embedded  = { path = "../iosevka-embedded" }
+tinypng           = { path = "../tinypng" }
+
+# Misc core bits
+zerocopy        = "0.8.25"
+zerocopy-derive = "0.8.25"
+
+# Debugging/Stack Unwinding
+goblin         = { version = "0.9.3", default-features =  false, features = ["pe64"] }
+rustc-demangle = "0.1"
+
+
+[[bin]]
+name  = "taperipper"
+test  = false
+bench = false
