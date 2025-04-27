@@ -4,7 +4,7 @@
 use std::os::uefi as uefi_std;
 use tracing::info;
 use uefi::{
-    Handle, Status, boot,
+    Handle, Status, boot, proto,
     runtime::{self, ResetType},
     table,
 };
@@ -51,4 +51,11 @@ pub fn shutdown(status: Option<Status>, data: Option<&[u8]>) -> ! {
 }
 pub fn shutdown_now() -> ! {
     shutdown(None, None);
+}
+
+pub fn get_proto<P>() -> Result<boot::ScopedProtocol<P>, uefi::Error>
+where
+    P: proto::Protocol,
+{
+    boot::get_handle_for_protocol::<P>().and_then(|hndl| boot::open_protocol_exclusive::<P>(hndl))
 }
