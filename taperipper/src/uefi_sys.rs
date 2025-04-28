@@ -2,7 +2,7 @@
 // UEFI Helpers/Utilities
 
 use std::os::uefi as uefi_std;
-use tracing::info;
+use tracing::{debug, info, warn};
 use uefi::{
     Handle, Status, boot,
     proto::{
@@ -10,7 +10,7 @@ use uefi::{
         console::gop::{GraphicsOutput, PixelFormat},
     },
     runtime::{self, ResetType},
-    table,
+    system, table,
 };
 
 pub fn init_uefi() {
@@ -55,6 +55,22 @@ pub fn shutdown(status: Option<Status>, data: Option<&[u8]>) -> ! {
 }
 pub fn shutdown_now() -> ! {
     shutdown(None, None);
+}
+
+// Set the highest rest output mod we can
+pub fn set_best_stdout_mode() {
+    system::with_stdout(|stdout| {
+        let best = stdout.modes().last().unwrap();
+        if let Err(_) = stdout.set_mode(best) {
+            warn!(
+                "Unable to set output mode to {}x{}",
+                best.columns(),
+                best.rows()
+            );
+        } else {
+            debug!("Set output mode to {}x{}", best.columns(), best.rows());
+        }
+    });
 }
 
 pub fn get_proto<P>() -> Result<boot::ScopedProtocol<P>, uefi::Error>
@@ -102,4 +118,3 @@ pub fn init_graphics(
 
     Ok(gop)
 }
-
