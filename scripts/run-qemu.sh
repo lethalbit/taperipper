@@ -48,19 +48,22 @@ echo " * Extra QEMU Args: ${QEMU_ARGS}"
 
 TAPERIPPER_IMG="${TARGET_DIR}/x86_64-unknown-uefi/${TARGET}/taperipper.efi"
 BOOT_IMG="${EFI_BOOT_DIR}/BOOTx64.efi"
+SECTIONS_FILE="${TAPERIPPER_IMG}.sections"
 
 if [ -f "${TAPERIPPER_IMG}" ]; then
+	llvm-readobj -S "${TAPERIPPER_IMG}" > "${SECTIONS_FILE}"
+
 	IMG_BASE_ADDR="$(llvm-readobj --file-header ${TAPERIPPER_IMG} | grep ImageBase | cut -d ':' -f 2 | tr -d [:space:])"
 
-	TXT_LOAD_ADDR="$(llvm-readobj -S ${TAPERIPPER_IMG} | grep -A 3 \\.text | grep VirtualAddress | cut -d ':' -f 2 | tr -d [:space:])"
+	TXT_LOAD_ADDR="$(cat ${SECTIONS_FILE} | grep -A 3 \\.text | grep VirtualAddress | cut -d ':' -f 2 | tr -d [:space:])"
 	TXT_ADDR_CALC="obase=16;ibase=16;${IMG_BASE_ADDR#"0x"}+${TXT_LOAD_ADDR#"0x"}"
 	TXT_ADDR="0x$(echo ${TXT_ADDR_CALC} | bc)"
 
-	DATA_LOAD_ADDR="$(llvm-readobj -S ${TAPERIPPER_IMG} | grep -A 3 \\.data | grep VirtualAddress | cut -d ':' -f 2 | tr -d [:space:])"
+	DATA_LOAD_ADDR="$(cat ${SECTIONS_FILE} | grep -A 3 \\.data | grep VirtualAddress | cut -d ':' -f 2 | tr -d [:space:])"
 	DATA_ADDR_CALC="obase=16;ibase=16;${IMG_BASE_ADDR#"0x"}+${DATA_LOAD_ADDR#"0x"}"
 	DATA_ADDR="0x$(echo ${DATA_ADDR_CALC} | bc)"
 
-	RDATA_LOAD_ADDR="$(llvm-readobj -S ${TAPERIPPER_IMG} | grep -A 3 \\.rdata | grep VirtualAddress | cut -d ':' -f 2 | tr -d [:space:])"
+	RDATA_LOAD_ADDR="$(cat ${SECTIONS_FILE} | grep -A 3 \\.rdata | grep VirtualAddress | cut -d ':' -f 2 | tr -d [:space:])"
 	RDATA_ADDR_CALC="obase=16;ibase=16;${IMG_BASE_ADDR#"0x"}+${RDATA_LOAD_ADDR#"0x"}"
 	RDATA_ADDR="0x$(echo ${RDATA_ADDR_CALC} | bc)"
 fi
