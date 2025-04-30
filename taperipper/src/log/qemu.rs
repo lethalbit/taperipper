@@ -16,17 +16,11 @@ use crate::{
     log::writer,
 };
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct QEMUDebugcon {}
 
 impl QEMUDebugcon {
     const PORT: u16 = 0xE9;
-}
-
-impl Default for QEMUDebugcon {
-    fn default() -> Self {
-        Self {}
-    }
 }
 
 impl<'a> writer::LogOutput<'a> for QEMUDebugcon {
