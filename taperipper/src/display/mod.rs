@@ -2,4 +2,5 @@
 
 pub mod color;
 pub mod fmt;
+pub mod framebuffer;
 pub mod style;
