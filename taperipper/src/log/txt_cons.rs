@@ -85,9 +85,9 @@ impl<'a> writer::LogOutput<'a> for TXTConsole {
         let output = unsafe { self.output().as_ref().unwrap() };
 
         if let Some(mode) = output.current_mode().unwrap() {
-            return mode.columns();
+            mode.columns()
         } else {
-            return 80;
+            80
         }
     }
 }
