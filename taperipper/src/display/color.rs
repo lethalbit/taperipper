@@ -75,7 +75,7 @@ impl<W: SetFgColor> SetFgColor for &'_ mut W {
 
     #[inline]
     fn get_fg_color(&self) -> Color {
-        W::get_fg_color(&self)
+        W::get_fg_color(self)
     }
 }
 
@@ -105,7 +105,7 @@ impl<W: SetBgColor> SetBgColor for &'_ mut W {
 
     #[inline]
     fn get_bg_color(&self) -> Color {
-        W::get_bg_color(&self)
+        W::get_bg_color(self)
     }
 }
 
