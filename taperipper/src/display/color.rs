@@ -235,9 +235,9 @@ where
     }
 }
 
-impl Into<uefi_color> for Color {
-    fn into(self) -> uefi_color {
-        match self {
+impl From<Color> for uefi_color {
+    fn from(color: Color) -> Self {
+        match color {
             Color::Default => uefi_color::LightGray,
             Color::Black => uefi_color::Black,
             Color::Red => uefi_color::Red,
@@ -265,9 +265,9 @@ fn _to_bltpixle(rgb: (u8, u8, u8)) -> BltPixel {
     BltPixel::new(rgb.0, rgb.1, rgb.2)
 }
 
-impl Into<BltPixel> for Color {
-    fn into(self) -> BltPixel {
-        match self {
+impl From<Color> for BltPixel {
+    fn from(color: Color) -> Self {
+        match color {
             Color::Default => _to_bltpixle(THEME_ROSE_PINE_MOON[7]),
             Color::Black => _to_bltpixle(THEME_ROSE_PINE_MOON[0]),
             Color::Red => _to_bltpixle(THEME_ROSE_PINE_MOON[1]),
@@ -295,9 +295,9 @@ fn _to_rg888(rgb: (u8, u8, u8)) -> Rgb888 {
     Rgb888::new(rgb.0, rgb.1, rgb.2)
 }
 
-impl Into<Rgb888> for Color {
-    fn into(self) -> Rgb888 {
-        match self {
+impl From<Color> for Rgb888 {
+    fn from(color: Color) -> Self {
+        match color {
             Color::Default => _to_rg888(THEME_ROSE_PINE_MOON[7]),
             Color::Black => _to_rg888(THEME_ROSE_PINE_MOON[0]),
             Color::Red => _to_rg888(THEME_ROSE_PINE_MOON[1]),
