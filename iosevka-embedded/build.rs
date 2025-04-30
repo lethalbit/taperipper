@@ -56,9 +56,9 @@ fn main() {
 
     // Compose all the font sets we want to generate
     let font_sets = FONTS
-        .into_iter()
-        .flat_map(|f| FONT_STYLES.into_iter().map(move |s| format!("{}{}", f, s)))
-        .flat_map(|fs| FONT_SIZES.into_iter().map(move |s| (fs.clone(), s)));
+        .iter()
+        .flat_map(|f| FONT_STYLES.iter().map(move |s| format!("{f}{s}")))
+        .flat_map(|fs| FONT_SIZES.iter().map(move |s| (fs.clone(), s)));
 
     // let font_archive = output_dir.join(FONT_ARCHIVE);
     // if !fs::exists(&font_archive).expect("Unable to resolve path") {
