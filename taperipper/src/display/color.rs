@@ -27,7 +27,7 @@ pub enum Color {
     BrightMagenta,
     BrightCyan,
     BrightWhite,
-    RGB(u8, u8, u8),
+    Rgb(u8, u8, u8),
 }
 
 pub const THEME_ROSE_PINE_MOON: &[(u8, u8, u8)] = &[
@@ -285,7 +285,7 @@ impl Into<BltPixel> for Color {
             Color::BrightMagenta => _to_bltpixle(THEME_ROSE_PINE_MOON[13]),
             Color::BrightCyan => _to_bltpixle(THEME_ROSE_PINE_MOON[14]),
             Color::BrightWhite => _to_bltpixle(THEME_ROSE_PINE_MOON[15]),
-            Color::RGB(r, g, b) => BltPixel::new(r, g, b),
+            Color::Rgb(r, g, b) => BltPixel::new(r, g, b),
         }
     }
 }
@@ -315,7 +315,7 @@ impl Into<Rgb888> for Color {
             Color::BrightMagenta => _to_rg888(THEME_ROSE_PINE_MOON[13]),
             Color::BrightCyan => _to_rg888(THEME_ROSE_PINE_MOON[14]),
             Color::BrightWhite => _to_rg888(THEME_ROSE_PINE_MOON[15]),
-            Color::RGB(r, g, b) => Rgb888::new(r, g, b),
+            Color::Rgb(r, g, b) => Rgb888::new(r, g, b),
         }
     }
 }
