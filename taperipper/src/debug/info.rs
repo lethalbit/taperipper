@@ -1,0 +1,168 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// This module ingests the EFI image file, and reads the `.pdata` and `.rdata` sections
+// to extract the embedded unwinding tables.
+// see: https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#the-pdata-section
+// and: https://learn.microsoft.com/en-us/cpp/build/exception-handling-x64?view=msvc-170
+
+use core::fmt;
+use std::{fmt::Debug, sync::OnceLock};
+
+use goblin::pe::PE;
+use tracing::debug;
+use uefi::{boot, cstr16, fs};
+
+use crate::uefi_sys;
+
+#[derive(Clone, Copy)]
+pub struct UnwindEntry {
+    start: usize,
+    end: usize,
+    prolog: u8,
+}
+
+impl UnwindEntry {
+    fn relocate(&mut self, base: usize) {
+        self.start += base;
+        self.end += base;
+    }
+}
+
+impl Debug for UnwindEntry {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "UnwindEntry {{ start: {:#018x}, end: {:#018x}, prolog: {} }}",
+            self.start, self.end, self.prolog
+        )
+    }
+}
+
+impl Eq for UnwindEntry {}
+impl Ord for UnwindEntry {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        if self.end > other.start {
+            std::cmp::Ordering::Greater
+        } else if self.end < other.start {
+            std::cmp::Ordering::Less
+        } else {
+            std::cmp::Ordering::Equal
+        }
+    }
+}
+
+impl PartialEq for UnwindEntry {
+    fn eq(&self, other: &Self) -> bool {
+        (self.start == other.start) && (self.end == other.end)
+    }
+
+    fn ne(&self, other: &Self) -> bool {
+        (self.start != other.start) || (self.end != other.end)
+    }
+}
+
+impl PartialOrd for UnwindEntry {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        if self.end > other.start {
+            Some(std::cmp::Ordering::Greater)
+        } else if self.end < other.start {
+            Some(std::cmp::Ordering::Less)
+        } else {
+            None
+        }
+    }
+}
+
+impl PartialEq<usize> for UnwindEntry {
+    fn eq(&self, addr: &usize) -> bool {
+        (self.start <= *addr) || (*addr <= self.end)
+    }
+
+    fn ne(&self, addr: &usize) -> bool {
+        (self.start > *addr) || (*addr > self.end)
+    }
+}
+
+impl PartialOrd<usize> for UnwindEntry {
+    fn partial_cmp(&self, addr: &usize) -> Option<std::cmp::Ordering> {
+        if *addr < self.start {
+            Some(std::cmp::Ordering::Less)
+        } else if *addr > self.end {
+            Some(std::cmp::Ordering::Greater)
+        } else if (self.start <= *addr) || (*addr <= self.end) {
+            Some(std::cmp::Ordering::Equal)
+        } else {
+            None
+        }
+    }
+}
+
+pub static UNWIND_TABLE: OnceLock<Vec<UnwindEntry>> = OnceLock::new();
+
+pub fn has_unwind_table() -> bool {
+    if let Some(table) = UNWIND_TABLE.get() {
+        return table.len() != 0;
+    } else {
+        return false;
+    }
+}
+
+pub fn load_unwind_table() -> Result<(), uefi::Error> {
+    debug!("Attempting to load Unwind information");
+
+    // Setup the UEFI filesystem stuff
+    let fs = boot::get_image_file_system(boot::image_handle())?;
+    let mut fs = fs::FileSystem::new(fs);
+
+    // BUG(aki):
+    // This won't always be true, but we don't really have a real way to
+    // actually get the name/raw image data
+    let img_path = cstr16!("EFI\\BOOT\\BOOTx64.efi");
+
+    // Get the image data and parse the PE file
+    let img_data = fs
+        .read(img_path)
+        .map_err(|_| uefi::Error::new(uefi::Status::INVALID_PARAMETER, ()))?;
+    let pe_file = PE::parse(&img_data.as_slice()).unwrap();
+
+    let _ = UNWIND_TABLE.get_or_init(move || {
+        let mut tbl: Vec<UnwindEntry> = Vec::new();
+        let (load_addr, _) = uefi_sys::get_image_info().unwrap();
+        debug!("Image load address: {:#018x}", load_addr);
+
+        let exception_data = pe_file.exception_data.unwrap();
+        for func in exception_data.functions() {
+            if let Ok(f) = func {
+                let unwind = exception_data
+                    .get_unwind_info(f, pe_file.sections.as_slice())
+                    .unwrap();
+
+                let mut tbl_entry = UnwindEntry {
+                    start: f.begin_address as usize,
+                    end: f.end_address as usize,
+                    prolog: unwind.size_of_prolog,
+                };
+                // tbl_entry.relocate(load_addr);
+
+                tbl.push(tbl_entry);
+            }
+        }
+
+        debug!("Found {} unwinding table entries", tbl.len());
+
+        tbl.shrink_to_fit();
+        tbl.sort();
+        tbl
+    });
+
+    Ok(())
+}
+
+pub fn unwind_entry_for(addr: usize) -> Option<UnwindEntry> {
+    let uw_tbl = UNWIND_TABLE.get()?;
+
+    if let Ok(idx) = uw_tbl.binary_search_by(|v| v.partial_cmp(&addr).unwrap()) {
+        Some(uw_tbl[idx])
+    } else {
+        None
+    }
+}
