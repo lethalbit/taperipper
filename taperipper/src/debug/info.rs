@@ -97,6 +97,7 @@ impl PartialOrd<usize> for UnwindEntry {
 }
 
 pub static UNWIND_TABLE: OnceLock<Vec<UnwindEntry>> = OnceLock::new();
+pub static UNWIND_NAMES: OnceLock<Vec<(usize, String)>> = OnceLock::new();
 
 pub fn has_unwind_table() -> bool {
     if let Some(table) = UNWIND_TABLE.get() {
@@ -124,12 +125,54 @@ pub fn load_unwind_table() -> Result<(), uefi::Error> {
         .map_err(|_| uefi::Error::new(uefi::Status::INVALID_PARAMETER, ()))?;
     let pe_file = PE::parse(&img_data.as_slice()).unwrap();
 
-    let _ = UNWIND_TABLE.get_or_init(move || {
-        let mut tbl: Vec<UnwindEntry> = Vec::new();
-        let (load_addr, _) = uefi_sys::get_image_info().unwrap();
-        debug!("Image load address: {:#018x}", load_addr);
+    let (load_addr, _) = uefi_sys::get_image_info().unwrap();
+    debug!("Image load address: {:#018x}", load_addr);
 
-        let exception_data = pe_file.exception_data.unwrap();
+    // Extract the `.text` virtual address so we can offset symbols to match unwind entries
+    let txt_virt = (pe_file.sections)
+        .iter()
+        .filter(|s| s.name().unwrap() == ".text")
+        .nth(0)
+        .unwrap()
+        .virtual_address;
+    // Pull out the string table and the symbol table
+    let strtab = pe_file
+        .header
+        .coff_header
+        .strings(&img_data.as_slice())
+        .unwrap()
+        .unwrap();
+    let symbols = pe_file
+        .header
+        .coff_header
+        .symbols(&img_data.as_slice())
+        .unwrap()
+        .unwrap();
+
+    // Build the virtual address -> symbol name map
+    let _ = UNWIND_NAMES.get_or_init(|| {
+        let mut tbl: Vec<(usize, String)> = Vec::new();
+
+        for sym in symbols
+            .iter()
+            .filter(|&(_, _, sym)| sym.is_function_definition())
+        {
+            tbl.push((
+                (sym.2.value + txt_virt) as usize,
+                rustc_demangle::demangle(sym.2.name(&strtab).unwrap()).to_string(),
+            ));
+        }
+
+        tbl.shrink_to_fit();
+        tbl.sort_by_key(|k| k.0);
+        tbl
+    });
+
+    let exception_data = pe_file.exception_data.unwrap();
+
+    let _ = UNWIND_TABLE.get_or_init(|| {
+        let mut tbl: Vec<UnwindEntry> = Vec::new();
+
         for func in exception_data.functions() {
             if let Ok(f) = func {
                 let unwind = exception_data
@@ -155,6 +198,16 @@ pub fn load_unwind_table() -> Result<(), uefi::Error> {
     });
 
     Ok(())
+}
+
+pub fn symbol_name_for_entry(entry: &UnwindEntry) -> Option<&String> {
+    let sym_tbl = UNWIND_NAMES.get()?;
+
+    if let Ok(pos) = sym_tbl.binary_search_by_key(&entry.start, |k| k.0) {
+        Some(&sym_tbl[pos].1)
+    } else {
+        None
+    }
 }
 
 pub fn unwind_entry_for(addr: usize) -> Option<UnwindEntry> {
