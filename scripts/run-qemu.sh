@@ -86,6 +86,6 @@ qemu-system-x86_64 -enable-kvm \
 	-rtc base=localtime,clock=rt \
 	-drive if=pflash,format=raw,readonly=on,file="${OVMF_CODE_FILE}" \
 	-drive if=pflash,format=raw,readonly=on,file="${OVMF_VARS_FILE}" \
-	-drive format=raw,file=fat:rw:"${EFI_ROOT}"
+	-drive format=raw,file=fat:rw:"${EFI_ROOT}" | tee log.txt
 
 popd || exit
