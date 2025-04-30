@@ -48,9 +48,12 @@ echo " * Extra QEMU Args: ${QEMU_ARGS}"
 
 TAPERIPPER_IMG="${TARGET_DIR}/x86_64-unknown-uefi/${TARGET}/taperipper.efi"
 BOOT_IMG="${EFI_BOOT_DIR}/BOOTx64.efi"
+
+UNWIND_FILE="${TAPERIPPER_IMG}.unwind"
 SECTIONS_FILE="${TAPERIPPER_IMG}.sections"
 
 if [ -f "${TAPERIPPER_IMG}" ]; then
+	llvm-readobj --unwind "${TAPERIPPER_IMG}" > "${UNWIND_FILE}"
 	llvm-readobj -S "${TAPERIPPER_IMG}" > "${SECTIONS_FILE}"
 
 	IMG_BASE_ADDR="$(llvm-readobj --file-header ${TAPERIPPER_IMG} | grep ImageBase | cut -d ':' -f 2 | tr -d [:space:])"
