@@ -23,9 +23,7 @@ impl GOPConsole {
     }
 
     pub fn from_framebuffer(framebuffer: Arc<RwLock<Framebuffer>>) -> Self {
-        Self {
-            framebuffer: framebuffer,
-        }
+        Self { framebuffer }
     }
 
     pub fn from_uefi(gfx: ScopedProtocol<GraphicsOutput>) -> Self {
