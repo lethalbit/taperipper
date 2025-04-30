@@ -87,6 +87,16 @@ fn main() {
 pub fn panic(info: &panic::PanicHookInfo<'_>) -> ! {
     // TODO(aki): Maybe one day we'll get stack unwinding
 
+    error!("SYSTEM PANIC");
+    let panic_log = info.location().unwrap();
+    let panic_msg = if let Some(msg) = info.payload_as_str() {
+        msg
+    } else {
+        ""
+    };
+
+    error!("{}: {}", panic_log, panic_msg);
+
     loop {
         unsafe {
             asm!("hlt", options(nomem, nostack));
