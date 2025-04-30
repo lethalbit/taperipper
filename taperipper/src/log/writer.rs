@@ -292,10 +292,7 @@ impl<P, S> OrElse<P, S> {
         P: LogOutput<'a>,
         S: LogOutput<'a>,
     {
-        Self {
-            primary: primary,
-            secondary: secondary,
-        }
+        Self { primary, secondary }
     }
 }
 
@@ -336,10 +333,7 @@ pub struct WithMaxLevel<L> {
 
 impl<L> WithMaxLevel<L> {
     pub fn new(output: L, level: Level) -> Self {
-        Self {
-            output: output,
-            level: level,
-        }
+        Self { output, level }
     }
 }
 
@@ -379,10 +373,7 @@ pub struct WithMinLevel<L> {
 
 impl<L> WithMinLevel<L> {
     pub fn new(output: L, level: Level) -> Self {
-        Self {
-            output: output,
-            level: level,
-        }
+        Self { output, level }
     }
 }
 
@@ -425,10 +416,7 @@ impl<L, F> WithFilter<L, F> {
     where
         F: Fn(&Metadata<'_>) -> bool,
     {
-        Self {
-            output: output,
-            filter: filter,
-        }
+        Self { output, filter }
     }
 }
 
