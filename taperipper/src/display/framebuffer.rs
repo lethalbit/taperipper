@@ -283,7 +283,7 @@ impl fmt::Write for Framebuffer {
                         .unwrap(),
                 );
 
-                let _ = Text::new(&line, text_pos, text_style)
+                let _ = Text::new(line, text_pos, text_style)
                     .draw(self)
                     .map_err(|_| fmt::Error)?;
 
@@ -309,7 +309,7 @@ impl fmt::Write for Framebuffer {
                         .unwrap(),
                 );
 
-                let _ = Text::new(&line, text_pos, text_style)
+                let _ = Text::new(line, text_pos, text_style)
                     .draw(self)
                     .map_err(|_| fmt::Error)?;
 
