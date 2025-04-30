@@ -236,8 +236,7 @@ where
             ts.second()
         )
     } else {
-        let _ = w.with_fg_color(Color::BrightBlack).write_str("??:??:?? ")?;
-        Ok(())
+        w.with_fg_color(Color::BrightBlack).write_str("??:??:?? ")
     }
 }
 
@@ -251,10 +250,7 @@ impl<W, const EN_BIT: u64> Output<W, EN_BIT> {
             indent: AtomicU64::new(0),
         };
 
-        Self {
-            writer: writer,
-            config: config,
-        }
+        Self { writer, config }
     }
 
     #[inline]
@@ -285,7 +281,7 @@ impl<W, const EN_BIT: u64> Output<W, EN_BIT> {
     {
         let writer = self.writer.make_writer_for(metadata)?;
         Some(Writer {
-            writer: writer,
+            writer,
             config: &self.config,
             current_line_len: 0,
         })
@@ -501,15 +497,11 @@ where
 
                 // Find the right-most viable spot for doing a line break starting from
                 // where we will truncate the line
-                let ws_offset = if let Some(rightmost_ws_pos) = line[..end_pos]
+                let ws_offset = line[..end_pos]
                     .chars()
                     .rev()
                     .position(|c| c.is_whitespace())
-                {
-                    rightmost_ws_pos
-                } else {
-                    0
-                };
+                    .unwrap_or_default();
 
                 // If our right-most whitespace offset is `0`, then we are forced to split
                 // at end_pos,
@@ -615,11 +607,11 @@ where
 {
     fn new(writer: &'writer mut W, altmode: bool) -> Self {
         Self {
-            writer: writer,
+            writer,
             seen: false,
             newline: false,
             comma: false,
-            altmode: altmode,
+            altmode,
         }
     }
 
