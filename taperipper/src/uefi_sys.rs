@@ -5,10 +5,14 @@ use core::{ffi::c_void, ptr};
 use std::os::uefi as uefi_std;
 use tracing::{debug, info, warn};
 use uefi::{
-    Handle, Status, boot,
+    CStr16, CString16, Handle, Status, boot,
     proto::{
         self,
         console::gop::{GraphicsOutput, PixelFormat},
+        media::{
+            file::{File, FileAttribute, FileMode},
+            fs::SimpleFileSystem,
+        },
     },
     runtime::{self, ResetType},
     system,
@@ -175,4 +179,31 @@ pub fn init_graphics(
     let _ = gop.set_mode(&new_mode);
 
     Ok(gop)
+}
+
+pub fn read_slice(file_path: &str, from: u64, buff: &mut [u8]) -> Result<usize, uefi::Error> {
+    let mut fs = get_proto::<SimpleFileSystem>()?;
+
+    // Convert the sane string to the absurd UCS-2 bullshit (thanks Microsoft /s)
+    let usc2_path =
+        CString16::try_from(file_path).map_err(|_| uefi::Error::new(uefi::Status::ABORTED, ()))?;
+
+    // Open the volume, then open the file itself.
+    let mut file = fs
+        .open_volume()
+        .and_then(|mut vol| {
+            vol.open(
+                CStr16::from_u16_with_nul(usc2_path.to_u16_slice_with_nul()).unwrap(),
+                FileMode::ReadWrite,
+                FileAttribute::empty(),
+            )
+        })?
+        .into_regular_file()
+        .ok_or(uefi::Error::new(uefi::Status::ABORTED, ()))?;
+
+    file.set_position(from)?;
+
+    // Fill the slice from the file
+    file.read(buff)
+        .map_err(|_| uefi::Error::new(uefi::Status::ABORTED, ()))
 }
