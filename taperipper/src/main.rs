@@ -20,8 +20,44 @@ mod uefi_sys;
 
 use crate::{
     display::framebuffer::Framebuffer,
-    log::{ConsoleSubscriber, GOPConsole, QEMUDebugcon, TXTConsole},
+    log::{ConsoleSubscriber, GOPConsole, QEMUDebugcon, TXTConsole, writer},
 };
+
+fn setup_logging(fb: &Arc<RwLock<Framebuffer>>, level: tracing::Level) {
+    // NOTE(aki): This is probably less than ideal, but *shrug*
+    #[cfg(debug_assertions)]
+    type DebugCon = QEMUDebugcon;
+    #[cfg(not(debug_assertions))]
+    type DebugCon = writer::NoOutput;
+
+    type GopCon = writer::WithMaxLevel<GOPConsole>;
+    type TxtCon = writer::WithMaxLevel<TXTConsole>;
+
+    // If we have a valid Framebuffer, then we can assume GOP initialized, otherwise fall back to text
+    if fb.read().unwrap().is_valid() {
+        fb.write().unwrap().clear_screen();
+
+        let gop_cons = writer::WithMaxLevel::new(GOPConsole::from_framebuffer(fb.clone()), level);
+
+        let subscriber = ConsoleSubscriber::<GopCon, DebugCon>::primary_only(gop_cons)
+            .with_secondary(DebugCon::default());
+        if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
+            panic!("Unable to setup global trace handler: {:?}", err);
+        }
+    } else {
+        let txt_cons = writer::WithMaxLevel::new(TXTConsole::default(), level);
+
+        let subscriber = ConsoleSubscriber::<TxtCon, DebugCon>::primary_only(txt_cons)
+            .with_secondary(DebugCon::default());
+        if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
+            panic!("Unable to setup global trace handler: {:?}", err);
+        }
+
+        crate::uefi_sys::set_best_stdout_mode();
+
+        warn!("Unable to initialize Graphics Console, falling back to Text");
+    }
+}
 
 fn main() {
     // Setup the UEFI crate
@@ -40,27 +76,7 @@ fn main() {
             Arc::new(RwLock::new(Framebuffer::default()))
         };
 
-    // If we have a valid Framebuffer, then we can assume GOP initialized, otherwise fall back to text
-    if fb.read().unwrap().is_valid() {
-        fb.write().unwrap().clear_screen();
-
-        let subscriber = ConsoleSubscriber::<GOPConsole, QEMUDebugcon>::primary_only(
-            GOPConsole::from_framebuffer(fb.clone()),
-        )
-        .with_secondary(QEMUDebugcon {});
-        if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
-            panic!("Unable to setup global trace handler: {:?}", err);
-        }
-    } else {
-        let subscriber = ConsoleSubscriber::<TXTConsole, QEMUDebugcon>::new();
-        if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
-            panic!("Unable to setup global trace handler: {:?}", err);
-        }
-
-        crate::uefi_sys::set_best_stdout_mode();
-
-        warn!("Unable to initialize Graphics Console, falling back to Text");
-    }
+    setup_logging(&fb, tracing::Level::DEBUG);
 
     debug!("UEFI Version {}", system::uefi_revision());
     debug!("Firmware Vendor  {}", system::firmware_vendor());
