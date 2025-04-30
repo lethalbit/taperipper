@@ -42,7 +42,7 @@ fn setup_logging(fb: &Arc<RwLock<Framebuffer>>, level: tracing::Level) {
         let subscriber = ConsoleSubscriber::<GopCon, DebugCon>::primary_only(gop_cons)
             .with_secondary(DebugCon::default());
         if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
-            panic!("Unable to setup global trace handler: {:?}", err);
+            panic!("Unable to setup global trace handler: {err:?}");
         }
     } else {
         let txt_cons = writer::WithMaxLevel::new(TXTConsole::default(), level);
@@ -50,7 +50,7 @@ fn setup_logging(fb: &Arc<RwLock<Framebuffer>>, level: tracing::Level) {
         let subscriber = ConsoleSubscriber::<TxtCon, DebugCon>::primary_only(txt_cons)
             .with_secondary(DebugCon::default());
         if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
-            panic!("Unable to setup global trace handler: {:?}", err);
+            panic!("Unable to setup global trace handler: {err:?}");
         }
 
         crate::uefi_sys::set_best_stdout_mode();
@@ -65,8 +65,7 @@ fn main() {
     // Hook the defaualt std panic handler
     panic::set_hook(Box::new(|pi| panic(pi)));
 
-    let ext_tables =
-        system::with_config_table(|config_table| uefi_sys::ExtraTables::new(&config_table));
+    let ext_tables = system::with_config_table(uefi_sys::ExtraTables::new);
 
     // Initialize a Framebuffer, it *might* be empty if our GOP initialization fails
     let fb =
@@ -110,11 +109,7 @@ pub fn panic(info: &panic::PanicHookInfo<'_>) -> ! {
 
     error!("SYSTEM PANIC");
     let panic_log = info.location().unwrap();
-    let panic_msg = if let Some(msg) = info.payload_as_str() {
-        msg
-    } else {
-        ""
-    };
+    let panic_msg = info.payload_as_str().unwrap_or("<No Message>");
 
     error!("{}: {}", panic_log, panic_msg);
 
