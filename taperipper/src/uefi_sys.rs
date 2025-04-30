@@ -9,6 +9,7 @@ use uefi::{
     proto::{
         self,
         console::gop::{GraphicsOutput, PixelFormat},
+        loaded_image::LoadedImage,
         media::{
             file::{File, FileAttribute, FileMode},
             fs::SimpleFileSystem,
@@ -140,6 +141,13 @@ where
     P: proto::Protocol,
 {
     boot::get_handle_for_protocol::<P>().and_then(|hndl| boot::open_protocol_exclusive::<P>(hndl))
+}
+
+pub fn get_image_info() -> Result<(usize, usize), uefi::Error> {
+    let loaded = get_proto::<LoadedImage>()?;
+    let img_info = loaded.info();
+
+    Ok((img_info.0 as usize, img_info.1 as usize))
 }
 
 pub fn init_graphics(
