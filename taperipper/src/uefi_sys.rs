@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // UEFI Helpers/Utilities
 
+use core::{ffi::c_void, ptr};
 use std::os::uefi as uefi_std;
 use tracing::{debug, info, warn};
 use uefi::{
@@ -10,8 +11,65 @@ use uefi::{
         console::gop::{GraphicsOutput, PixelFormat},
     },
     runtime::{self, ResetType},
-    system, table,
+    system,
+    table::{
+        self,
+        cfg::{ACPI_GUID, ACPI2_GUID, ConfigTableEntry, SMBIOS_GUID, SMBIOS3_GUID},
+    },
 };
+
+#[derive(Clone, Copy, Debug)]
+pub struct ExtraTables {
+    pub acpi: *const c_void,
+    pub acpi_ver: u8,
+    pub smbios: *const c_void,
+    pub smbios_ver: u8,
+}
+
+impl ExtraTables {
+    pub fn new(cfg_table: &[ConfigTableEntry]) -> Self {
+        let mut cfg = Self {
+            acpi: ptr::null(),
+            acpi_ver: 0,
+            smbios: ptr::null(),
+            smbios_ver: 0,
+        };
+        cfg.populate(cfg_table);
+        cfg
+    }
+
+    fn populate(&mut self, cfg_table: &[ConfigTableEntry]) {
+        for table_entry in cfg_table {
+            match table_entry.guid {
+                ACPI_GUID => {
+                    if self.acpi_ver < 1 {
+                        self.acpi_ver = 1;
+                        self.acpi = table_entry.address;
+                    }
+                }
+                ACPI2_GUID => {
+                    if self.acpi_ver < 2 {
+                        self.acpi_ver = 2;
+                        self.acpi = table_entry.address;
+                    }
+                }
+                SMBIOS_GUID => {
+                    if self.smbios_ver < 1 {
+                        self.smbios_ver = 1;
+                        self.smbios = table_entry.address;
+                    }
+                }
+                SMBIOS3_GUID => {
+                    if self.smbios_ver < 3 {
+                        self.smbios_ver = 3;
+                        self.smbios = table_entry.address;
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+}
 
 pub fn init_uefi() {
     // Get the system table and image handle

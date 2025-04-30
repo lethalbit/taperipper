@@ -29,6 +29,9 @@ fn main() {
     // Hook the defaualt std panic handler
     panic::set_hook(Box::new(|pi| panic(pi)));
 
+    let ext_tables =
+        system::with_config_table(|config_table| uefi_sys::ExtraTables::new(&config_table));
+
     // Initialize a Framebuffer, it *might* be empty if our GOP initialization fails
     let fb =
         if let Ok(gop) = uefi_sys::init_graphics(Framebuffer::MAX_WIDTH, Framebuffer::MAX_HEIGHT) {
@@ -66,6 +69,8 @@ fn main() {
         "Image Address:  {:#018x}",
         boot::image_handle().as_ptr() as usize
     );
+    debug!("ACPI Address:   {:#018x}", ext_tables.acpi as usize);
+    debug!("SMBIOS Address: {:#018x}", ext_tables.smbios as usize);
 
     if fb.read().unwrap().is_valid() {
         let fb_size_pixels = (fb.read().unwrap().width(), fb.read().unwrap().height());
