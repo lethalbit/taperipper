@@ -76,6 +76,12 @@ echo " * .text: ${TXT_ADDR}"
 echo " * .data: ${DATA_ADDR}"
 echo " * .rdata: ${RDATA_ADDR}"
 
+GDBSCRIPT="${TARGET_DIR}/gdbscript"
+
+echo "add-symbol-file ${TAPERIPPER_IMG} -s .text ${TXT_ADDR} -s .data ${DATA_ADDR} -s .rdata ${RDATA_ADDR}" > "${GDBSCRIPT}"
+echo "tar remote 127.0.0.1:1234" >> "${GDBSCRIPT}"
+echo "display /5i \$pc" >> "${GDBSCRIPT}"
+
 rm "${BOOT_IMG}"
 cp "${TAPERIPPER_IMG}" "${BOOT_IMG}"
 
