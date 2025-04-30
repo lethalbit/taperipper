@@ -96,7 +96,7 @@ pub fn has_boot_services() -> bool {
 
     // Get a handle to the system table and check if the boot services are there
     let system_table = unsafe { system_table.as_ref() };
-    return !system_table.boot_services.is_null();
+    !system_table.boot_services.is_null()
 }
 
 // Reboot the machine
@@ -123,7 +123,7 @@ pub fn shutdown_now() -> ! {
 pub fn set_best_stdout_mode() {
     system::with_stdout(|stdout| {
         let best = stdout.modes().last().unwrap();
-        if let Err(_) = stdout.set_mode(best) {
+        if stdout.set_mode(best).is_err() {
             warn!(
                 "Unable to set output mode to {}x{}",
                 best.columns(),
