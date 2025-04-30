@@ -14,10 +14,14 @@ use uefi::{
     system,
 };
 
+#[cfg(feature = "stack-unwinding")]
+mod debug;
 mod display;
 mod log;
 mod uefi_sys;
 
+#[cfg(feature = "stack-unwinding")]
+use crate::debug::{info, trace};
 use crate::{
     display::framebuffer::Framebuffer,
     log::{ConsoleSubscriber, GOPConsole, QEMUDebugcon, TXTConsole, writer},
@@ -77,6 +81,15 @@ fn main() {
 
     setup_logging(&fb, tracing::Level::DEBUG);
 
+    if cfg!(feature = "stack-unwinding") {
+        if let Err(err) = info::load_unwind_table() {
+            warn!(
+                "Unable to load unwind information, stack traces on panic will not be available!"
+            );
+            warn!("Error: {err:?}");
+        }
+    }
+
     debug!("UEFI Version {}", system::uefi_revision());
     debug!("Firmware Vendor  {}", system::firmware_vendor());
     debug!("Firmware Version {}", system::firmware_revision());
@@ -105,13 +118,24 @@ fn main() {
 }
 
 pub fn panic(info: &panic::PanicHookInfo<'_>) -> ! {
-    // TODO(aki): Maybe one day we'll get stack unwinding
+    // BUG(aki): There may be a case where we panic *before* logging is set up!
 
     error!("SYSTEM PANIC");
     let panic_log = info.location().unwrap();
     let panic_msg = info.payload_as_str().unwrap_or("<No Message>");
 
     error!("{}: {}", panic_log, panic_msg);
+
+    if cfg!(feature = "stack-unwinding") {
+        if info::has_unwind_table() {
+            // Capture a stack trace from here
+            let bt = trace::Trace::new();
+        } else {
+            error!("No unwind table present, unable to unwind stack!");
+        }
+    } else {
+        error!("Stack unwinding not available!");
+    }
 
     loop {
         unsafe {
