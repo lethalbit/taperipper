@@ -55,7 +55,7 @@ impl<W: SetStyle> SetStyle for &'_ mut W {
 
     #[inline]
     fn get_style(&self) -> Style {
-        W::get_style(&self)
+        W::get_style(self)
     }
 }
 
