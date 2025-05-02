@@ -5,19 +5,19 @@
 // and: https://learn.microsoft.com/en-us/cpp/build/exception-handling-x64?view=msvc-170
 
 use core::{ffi::c_void, fmt};
-use std::{fmt::Debug, sync::OnceLock};
+use std::{collections::BTreeMap, fmt::Debug, sync::OnceLock};
 
 use goblin::pe::PE;
 use tracing::debug;
 use uefi::{boot, cstr16, fs};
 
 use crate::uefi_sys;
-
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct UnwindEntry {
     start: usize,
     end: usize,
     prolog: u8,
+    name: Option<String>,
 }
 
 impl UnwindEntry {
@@ -35,8 +35,8 @@ impl Debug for UnwindEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "UnwindEntry {{ start: {:#018x}, end: {:#018x}, prolog: {} }}",
-            self.start, self.end, self.prolog
+            "UnwindEntry {{ start: {:#018x}, end: {:#018x}, prolog: {} name: {:?} }}",
+            self.start, self.end, self.prolog, self.name
         )
     }
 }
@@ -95,7 +95,6 @@ impl PartialOrd<usize> for UnwindEntry {
 }
 
 pub static UNWIND_TABLE: OnceLock<Vec<UnwindEntry>> = OnceLock::new();
-pub static UNWIND_NAMES: OnceLock<Vec<(usize, String)>> = OnceLock::new();
 
 pub static LOAD_ADDR: OnceLock<usize> = OnceLock::new();
 pub static RUNTIME_ADDR: OnceLock<usize> = OnceLock::new();
@@ -160,23 +159,16 @@ pub fn load_unwind_table() -> Result<(), uefi::Error> {
         .unwrap();
 
     // Build the virtual address -> symbol name map
-    let _ = UNWIND_NAMES.get_or_init(|| {
-        let mut tbl: Vec<(usize, String)> = Vec::new();
+    let mut sym_map = BTreeMap::new();
+    for sym in symbols
+        .iter()
+        .filter(|&(_, _, sym)| sym.is_function_definition())
+    {
+        let sym_base = (sym.2.value + txt_virt) as usize;
+        let sym_name = rustc_demangle::demangle(sym.2.name(&strtab).unwrap()).to_string();
 
-        for sym in symbols
-            .iter()
-            .filter(|&(_, _, sym)| sym.is_function_definition())
-        {
-            tbl.push((
-                (sym.2.value + txt_virt) as usize,
-                rustc_demangle::demangle(sym.2.name(&strtab).unwrap()).to_string(),
-            ));
-        }
-
-        tbl.shrink_to_fit();
-        tbl.sort_by_key(|k| k.0);
-        tbl
-    });
+        sym_map.insert(sym_base, sym_name);
+    }
 
     let exception_data = pe_file.exception_data.unwrap();
 
@@ -196,6 +188,7 @@ pub fn load_unwind_table() -> Result<(), uefi::Error> {
                     start: start_addr,
                     end: end_addr,
                     prolog: unwind.size_of_prolog,
+                    name: sym_map.get(&start_addr).cloned(),
                 };
 
                 let tbl_run = tbl_entry.relocate(*RUNTIME_ADDR.get().unwrap());
@@ -215,16 +208,6 @@ pub fn load_unwind_table() -> Result<(), uefi::Error> {
     });
 
     Ok(())
-}
-
-pub fn symbol_name_for_entry(entry: &UnwindEntry) -> Option<&String> {
-    let sym_tbl = UNWIND_NAMES.get()?;
-
-    if let Ok(pos) = sym_tbl.binary_search_by_key(&entry.start, |k| k.0) {
-        Some(&sym_tbl[pos].1)
-    } else {
-        None
-    }
 }
 
 pub fn unwind_entry_for<'a>(addr: usize) -> Option<&'a UnwindEntry> {
