@@ -9,10 +9,7 @@ use std::{
 };
 
 use tracing::{self, debug, error, info, trace, warn};
-use uefi::{
-    boot::{self},
-    system,
-};
+use uefi::system;
 
 #[cfg(feature = "stack-unwinding")]
 mod debug;
@@ -93,10 +90,6 @@ fn main() {
     debug!("UEFI Version {}", system::uefi_revision());
     debug!("Firmware Vendor  {}", system::firmware_vendor());
     debug!("Firmware Version {}", system::firmware_revision());
-    debug!(
-        "Image Address:  {:#018x}",
-        boot::image_handle().as_ptr() as usize
-    );
     debug!("ACPI Address:   {:#018x}", ext_tables.acpi as usize);
     debug!("SMBIOS Address: {:#018x}", ext_tables.smbios as usize);
 
