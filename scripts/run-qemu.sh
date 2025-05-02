@@ -13,14 +13,17 @@ TARGET_DIR="${SRC_DIR}/target"
 
 EFI_ROOT="${TARGET_DIR}/esp"
 EFI_BOOT_DIR="${EFI_ROOT}/EFI/boot"
+OVMF_DIR="${TARGET_DIR}/.ovmf"
 
 [ ! -d "${EFI_BOOT_DIR}" ] && mkdir -p "${EFI_BOOT_DIR}"
 
-OVMF_CODE_FILE="${TARGET_DIR}/OVMF_CODE.4m.fd"
-OVMF_VARS_FILE="${TARGET_DIR}/OVMF_VARS.4m.fd"
+OVMF_CODE_FILE="${OVMF_DIR}/OVMF_CODE.4m.fd"
+OVMF_VARS_FILE="${OVMF_DIR}/OVMF_VARS.4m.fd"
 
-[ ! -f "${OVMF_CODE_FILE}" ] && cp "/usr/share/edk2/x64/OVMF_CODE.4m.fd" "${OVMF_CODE_FILE}"
-[ ! -f "${OVMF_VARS_FILE}" ] && cp "/usr/share/edk2/x64/OVMF_VARS.4m.fd" "${OVMF_VARS_FILE}"
+[ ! -f "${OVMF_CODE_FILE}" ] && bash "${SRC_DIR}/scripts/build-ovmf.sh"
+
+OVMF_GDB_MAP="${OVMF_DIR}/gdb-script"
+[ ! -f "${OVMF_GDB_MAP}" ] && bash "${SRC_DIR}/scripts/make-dbg.sh"
 
 
 TARGET="debug"
@@ -56,7 +59,8 @@ if [ -f "${TAPERIPPER_IMG}" ]; then
 	llvm-readobj --unwind "${TAPERIPPER_IMG}" > "${UNWIND_FILE}"
 	llvm-readobj -S "${TAPERIPPER_IMG}" > "${SECTIONS_FILE}"
 
-	IMG_BASE_ADDR="$(llvm-readobj --file-header ${TAPERIPPER_IMG} | grep ImageBase | cut -d ':' -f 2 | tr -d [:space:])"
+	# IMG_BASE_ADDR="$(llvm-readobj --file-header ${TAPERIPPER_IMG} | grep ImageBase | cut -d ':' -f 2 | tr -d [:space:])"
+	IMG_BASE_ADDR="0x00005E7D000"
 
 	TXT_LOAD_ADDR="$(cat ${SECTIONS_FILE} | grep -A 3 \\.text | grep VirtualAddress | cut -d ':' -f 2 | tr -d [:space:])"
 	TXT_ADDR_CALC="obase=16;ibase=16;${IMG_BASE_ADDR#"0x"}+${TXT_LOAD_ADDR#"0x"}"
@@ -78,7 +82,8 @@ echo " * .rdata: ${RDATA_ADDR}"
 
 GDBSCRIPT="${TARGET_DIR}/gdbscript"
 
-echo "add-symbol-file ${TAPERIPPER_IMG} -s .text ${TXT_ADDR} -s .data ${DATA_ADDR} -s .rdata ${RDATA_ADDR}" > "${GDBSCRIPT}"
+cat "${OVMF_GDB_MAP}" > "${GDBSCRIPT}"
+echo "add-symbol-file ${TAPERIPPER_IMG} -s .text ${TXT_ADDR} -s .data ${DATA_ADDR} -s .rdata ${RDATA_ADDR}" >> "${GDBSCRIPT}"
 echo "tar remote 127.0.0.1:1234" >> "${GDBSCRIPT}"
 echo "display /5i \$pc" >> "${GDBSCRIPT}"
 
@@ -87,6 +92,7 @@ cp "${TAPERIPPER_IMG}" "${BOOT_IMG}"
 
 pushd "${TARGET_DIR}" || exit
 
+# -global isa-debugcon.iobase=0x402 \#
 qemu-system-x86_64 -enable-kvm \
 	-debugcon stdio $QEMU_ARGS \
 	-rtc base=localtime,clock=rt \
