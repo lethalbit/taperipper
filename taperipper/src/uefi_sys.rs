@@ -84,7 +84,7 @@ pub fn init_uefi() {
     // Setup the UEFI crate
     unsafe {
         table::set_system_table(system_table.as_ptr().cast());
-        let image_handle = Handle::from_ptr(image_handle.as_ptr().cast()).unwrap();
+        let image_handle = Handle::from_ptr(image_handle.as_ptr()).unwrap();
         boot::set_image_handle(image_handle);
     }
 }
