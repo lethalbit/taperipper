@@ -17,6 +17,19 @@ pub struct Frame {
     sp: usize,
 }
 
+#[inline(always)]
+pub fn get_ip() -> usize {
+    let ip: usize;
+    unsafe {
+        asm!(
+            "leaq (%rip), %rax",
+            out("rax") ip,
+            options(att_syntax, nostack)
+        );
+    }
+    ip
+}
+
 pub struct Trace {
     start_addr: usize,
     frames: Vec<Frame>,
