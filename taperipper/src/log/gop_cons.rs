@@ -97,12 +97,12 @@ impl color::SetColors for GOPConsole {}
 
 impl style::SetStyle for GOPConsole {
     #[inline]
-    fn set_style(&mut self, _style: style::Style) {
-        // NOP
+    fn set_style(&mut self, style: style::Style) {
+        self.framebuffer.write().unwrap().set_style(style);
     }
 
     #[inline]
     fn get_style(&self) -> style::Style {
-        style::Style::None
+        self.framebuffer.read().unwrap().get_style()
     }
 }
