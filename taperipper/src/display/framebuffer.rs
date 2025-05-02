@@ -18,9 +18,12 @@ use embedded_graphics::{
     text::Text,
 };
 
-use iosevka_embedded::IOSEVKAFIXED_EXTENDEDTHIN_16;
+use iosevka_embedded::{IOSEVKAFIXED_EXTENDEDBOLD_16, IOSEVKAFIXED_EXTENDEDTHIN_16};
 
-use crate::{display::color, uefi_sys};
+use crate::{
+    display::{color, style},
+    uefi_sys,
+};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Framebuffer {
@@ -33,6 +36,7 @@ pub struct Framebuffer {
     pix_format: PixelFormat,
     fg_color: color::Color,
     bg_color: color::Color,
+    style: style::Style,
 }
 
 impl color::SetFgColor for Framebuffer {
@@ -57,6 +61,16 @@ impl color::SetBgColor for Framebuffer {
 
 impl color::SetColors for Framebuffer {}
 
+impl style::SetStyle for Framebuffer {
+    fn get_style(&self) -> style::Style {
+        self.style
+    }
+
+    fn set_style(&mut self, style: style::Style) {
+        self.style = style
+    }
+}
+
 impl Default for Framebuffer {
     fn default() -> Self {
         Self {
@@ -69,6 +83,7 @@ impl Default for Framebuffer {
             pix_format: PixelFormat::Rgb,
             fg_color: color::Color::Default,
             bg_color: color::Color::Black,
+            style: style::Style::None,
         }
     }
 }
@@ -138,6 +153,7 @@ impl Framebuffer {
             pix_format: mode.pixel_format(),
             fg_color: color::Color::Default,
             bg_color: color::Color::Black,
+            style: style::Style::None,
         }
     }
 
@@ -260,8 +276,13 @@ impl DrawTarget for Framebuffer {
 
 impl fmt::Write for Framebuffer {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        let text_style: BdfTextStyle<'_, Rgb888> =
-            BdfTextStyle::new(&IOSEVKAFIXED_EXTENDEDTHIN_16, self.fg_color.into());
+        let text_style: BdfTextStyle<'_, Rgb888> = BdfTextStyle::new(
+            match self.style {
+                style::Style::Bold => &IOSEVKAFIXED_EXTENDEDBOLD_16,
+                _ => &IOSEVKAFIXED_EXTENDEDTHIN_16,
+            },
+            self.fg_color.into(),
+        );
 
         // TODO(aki): Maybe we want to support more control code? (\f \v \r?)
         // TODO(aki):
