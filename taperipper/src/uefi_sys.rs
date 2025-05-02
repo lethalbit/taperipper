@@ -9,7 +9,7 @@ use uefi::{
     proto::{
         self,
         console::gop::{GraphicsOutput, PixelFormat},
-        loaded_image::LoadedImage,
+        loaded_image::{LoadOptionsError, LoadedImage},
         media::{
             file::{File, FileAttribute, FileMode},
             fs::SimpleFileSystem,
@@ -141,6 +141,33 @@ where
     P: proto::Protocol,
 {
     boot::get_handle_for_protocol::<P>().and_then(|hndl| boot::open_protocol_exclusive::<P>(hndl))
+}
+
+pub fn get_options() -> Result<Option<Vec<String>>, uefi::Error> {
+    let loaded = get_proto::<LoadedImage>()?;
+
+    let img_opts = loaded.load_options_as_cstr16();
+    if let Err(opts_err) = img_opts {
+        return match opts_err {
+            LoadOptionsError::NotSet => Ok(None),
+            _ => Err(uefi::Error::new(uefi::Status::ABORTED, ())),
+        };
+    }
+
+    let mut img_opts: Vec<String> = img_opts
+        .unwrap()
+        .to_string()
+        .split(' ')
+        .map(str::to_string)
+        .collect();
+
+    img_opts.shrink_to_fit();
+
+    Ok(if img_opts.len() > 0 {
+        Some(img_opts)
+    } else {
+        None
+    })
 }
 
 pub fn get_image_info() -> Result<(usize, usize), uefi::Error> {
