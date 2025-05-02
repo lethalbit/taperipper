@@ -45,7 +45,7 @@ impl<'a> writer::LogOutput<'a> for QEMUDebugcon {
 
     #[inline]
     fn line_len(&self) -> usize {
-        160
+        130
     }
 }
 
