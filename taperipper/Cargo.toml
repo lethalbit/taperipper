@@ -23,14 +23,12 @@ iosevka-embedded  = { path = "../iosevka-embedded" }
 tinypng           = { path = "../tinypng" }
 
 # Debugging/Stack Unwinding
-zerocopy        = { version = "0.8", optional = true }
-zerocopy-derive = { version = "0.8", optional = true }
 goblin          = { version = "0.9", default-features =  false, features = ["pe64"], optional = true }
 rustc-demangle  = { version = "0.1", optional = true }
 
 [features]
 default         = ["stack-unwinding"]
-stack-unwinding = ["dep:zerocopy", "dep:zerocopy-derive", "dep:goblin", "dep:rustc-demangle"]
+stack-unwinding = ["dep:goblin", "dep:rustc-demangle",]
 
 [[bin]]
 name  = "taperipper"
