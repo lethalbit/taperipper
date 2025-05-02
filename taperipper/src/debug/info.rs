@@ -44,10 +44,10 @@ impl Debug for UnwindEntry {
 impl Eq for UnwindEntry {}
 impl Ord for UnwindEntry {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        if self.end > other.start {
-            std::cmp::Ordering::Greater
-        } else if self.end < other.start {
+        if self.end <= other.start {
             std::cmp::Ordering::Less
+        } else if other.end <= self.start {
+            std::cmp::Ordering::Greater
         } else {
             std::cmp::Ordering::Equal
         }
@@ -58,18 +58,16 @@ impl PartialEq for UnwindEntry {
     fn eq(&self, other: &Self) -> bool {
         (self.start == other.start) && (self.end == other.end)
     }
-
-    fn ne(&self, other: &Self) -> bool {
-        (self.start != other.start) || (self.end != other.end)
-    }
 }
 
 impl PartialOrd for UnwindEntry {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        if self.end > other.start {
-            Some(std::cmp::Ordering::Greater)
-        } else if self.end < other.start {
+        if self.end <= other.start {
             Some(std::cmp::Ordering::Less)
+        } else if other.end <= self.start {
+            Some(std::cmp::Ordering::Greater)
+        } else if self == other {
+            Some(std::cmp::Ordering::Equal)
         } else {
             None
         }
@@ -78,21 +76,17 @@ impl PartialOrd for UnwindEntry {
 
 impl PartialEq<usize> for UnwindEntry {
     fn eq(&self, addr: &usize) -> bool {
-        (self.start <= *addr) || (*addr <= self.end)
-    }
-
-    fn ne(&self, addr: &usize) -> bool {
-        (self.start > *addr) || (*addr > self.end)
+        (self.start <= *addr) || (*addr < self.end)
     }
 }
 
 impl PartialOrd<usize> for UnwindEntry {
     fn partial_cmp(&self, addr: &usize) -> Option<std::cmp::Ordering> {
-        if *addr < self.start {
+        if self.end <= *addr {
             Some(std::cmp::Ordering::Less)
-        } else if *addr > self.end {
+        } else if *addr < self.start {
             Some(std::cmp::Ordering::Greater)
-        } else if (self.start <= *addr) || (*addr <= self.end) {
+        } else if self.eq(addr) {
             Some(std::cmp::Ordering::Equal)
         } else {
             None
