@@ -47,6 +47,18 @@ impl UnwindEntry {
     }
 }
 
+impl fmt::Display for UnwindEntry {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{} {:#018x}-{:#018x}",
+            self.name.clone().unwrap_or("<UNNAMED>".to_string()),
+            self.start,
+            self.end
+        )
+    }
+}
+
 impl fmt::Debug for UnwindEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
