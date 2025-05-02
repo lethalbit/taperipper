@@ -7,7 +7,7 @@
 use core::{ffi::c_void, fmt};
 use std::{collections::BTreeMap, sync::OnceLock};
 
-use goblin::pe::PE;
+use goblin::pe::{PE, exception};
 use tracing::debug;
 use uefi::{boot, cstr16, fs};
 
@@ -17,6 +17,7 @@ pub struct UnwindEntry {
     start: usize,
     end: usize,
     prolog: u8,
+    codes: Vec<exception::UnwindCode>,
     name: Option<String>,
 }
 
@@ -37,6 +38,10 @@ impl UnwindEntry {
         &self.name
     }
 
+    pub fn codes(&self) -> &Vec<exception::UnwindCode> {
+        &self.codes
+    }
+
     fn relocate(&self, base: usize) -> Self {
         let mut relocated = self.clone();
 
@@ -51,7 +56,7 @@ impl fmt::Display for UnwindEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "{} {:#018x}-{:#018x}",
+            "{} {:#018x}-{:#018x}\n",
             self.name.clone().unwrap_or("<UNNAMED>".to_string()),
             self.start,
             self.end
@@ -63,8 +68,8 @@ impl fmt::Debug for UnwindEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "UnwindEntry {{ start: {:#018x}, end: {:#018x}, prolog: {} name: {:?} }}",
-            self.start, self.end, self.prolog, self.name
+            "UnwindEntry {{ start: {:#018x}, end: {:#018x}, prolog: {}, codes: {:?}, name: {:?} }}",
+            self.start, self.end, self.prolog, self.codes, self.name
         )
     }
 }
@@ -216,6 +221,7 @@ pub fn load_unwind_table() -> Result<(), uefi::Error> {
                     start: start_addr,
                     end: end_addr,
                     prolog: unwind.size_of_prolog,
+                    codes: unwind.unwind_codes().filter_map(|f| f.ok()).collect(),
                     name: sym_map.get(&start_addr).cloned(),
                 };
 
