@@ -5,7 +5,7 @@
 // and: https://learn.microsoft.com/en-us/cpp/build/exception-handling-x64?view=msvc-170
 
 use core::{ffi::c_void, fmt};
-use std::{collections::BTreeMap, fmt::Debug, sync::OnceLock};
+use std::{collections::BTreeMap, sync::OnceLock};
 
 use goblin::pe::PE;
 use tracing::debug;
@@ -47,7 +47,7 @@ impl UnwindEntry {
     }
 }
 
-impl Debug for UnwindEntry {
+impl fmt::Debug for UnwindEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
