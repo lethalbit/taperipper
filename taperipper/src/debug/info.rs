@@ -21,6 +21,22 @@ pub struct UnwindEntry {
 }
 
 impl UnwindEntry {
+    pub fn start(&self) -> usize {
+        self.start
+    }
+
+    pub fn end(&self) -> usize {
+        self.end
+    }
+
+    pub fn prolog(&self) -> u8 {
+        self.prolog
+    }
+
+    pub fn name(&self) -> &Option<String> {
+        &self.name
+    }
+
     fn relocate(&self, base: usize) -> Self {
         let mut relocated = self.clone();
 
