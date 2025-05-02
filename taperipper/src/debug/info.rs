@@ -4,7 +4,7 @@
 // see: https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#the-pdata-section
 // and: https://learn.microsoft.com/en-us/cpp/build/exception-handling-x64?view=msvc-170
 
-use core::fmt;
+use core::{ffi::c_void, fmt};
 use std::{fmt::Debug, sync::OnceLock};
 
 use goblin::pe::PE;
@@ -21,9 +21,13 @@ pub struct UnwindEntry {
 }
 
 impl UnwindEntry {
-    fn relocate(&mut self, base: usize) {
-        self.start += base;
-        self.end += base;
+    fn relocate(&self, base: usize) -> Self {
+        let mut relocated = self.clone();
+
+        relocated.start += base;
+        relocated.end += base;
+
+        relocated
     }
 }
 
@@ -99,12 +103,19 @@ impl PartialOrd<usize> for UnwindEntry {
 pub static UNWIND_TABLE: OnceLock<Vec<UnwindEntry>> = OnceLock::new();
 pub static UNWIND_NAMES: OnceLock<Vec<(usize, String)>> = OnceLock::new();
 
+pub static LOAD_ADDR: OnceLock<usize> = OnceLock::new();
+pub static RUNTIME_ADDR: OnceLock<usize> = OnceLock::new();
+
 pub fn has_unwind_table() -> bool {
     if let Some(table) = UNWIND_TABLE.get() {
         return table.len() != 0;
     } else {
         return false;
     }
+}
+
+unsafe extern "C" {
+    fn efi_main(img: *const c_void, syst: *const c_void);
 }
 
 pub fn load_unwind_table() -> Result<(), uefi::Error> {
@@ -126,7 +137,12 @@ pub fn load_unwind_table() -> Result<(), uefi::Error> {
     let pe_file = PE::parse(&img_data.as_slice()).unwrap();
 
     let (load_addr, _) = uefi_sys::get_image_info().unwrap();
-    debug!("Image load address: {:#018x}", load_addr);
+
+    RUNTIME_ADDR.get_or_init(|| efi_main as usize - pe_file.entry);
+    LOAD_ADDR.get_or_init(|| load_addr);
+
+    debug!("Base Address (run ): {:#018x}", RUNTIME_ADDR.get().unwrap());
+    debug!("Base Address (load): {:#018x}", LOAD_ADDR.get().unwrap());
 
     // Extract the `.text` virtual address so we can offset symbols to match unwind entries
     let txt_virt = (pe_file.sections)
@@ -179,18 +195,25 @@ pub fn load_unwind_table() -> Result<(), uefi::Error> {
                     .get_unwind_info(f, pe_file.sections.as_slice())
                     .unwrap();
 
-                let mut tbl_entry = UnwindEntry {
-                    start: f.begin_address as usize,
-                    end: f.end_address as usize,
+                let start_addr = f.begin_address as usize;
+                let end_addr = f.end_address as usize;
+
+                let tbl_entry = UnwindEntry {
+                    start: start_addr,
+                    end: end_addr,
                     prolog: unwind.size_of_prolog,
                 };
-                // tbl_entry.relocate(load_addr);
 
-                tbl.push(tbl_entry);
+                let tbl_run = tbl_entry.relocate(*RUNTIME_ADDR.get().unwrap());
+                let tbl_load = tbl_entry.relocate(*LOAD_ADDR.get().unwrap());
+
+                tbl.push(tbl_run);
+                tbl.push(tbl_load);
             }
         }
 
-        debug!("Found {} unwinding table entries", tbl.len());
+        // We need to half the number of entries because we make 2, for each frame
+        debug!("Found {} unwinding table entries", tbl.len() / 2);
 
         tbl.shrink_to_fit();
         tbl.sort();
@@ -210,11 +233,11 @@ pub fn symbol_name_for_entry(entry: &UnwindEntry) -> Option<&String> {
     }
 }
 
-pub fn unwind_entry_for(addr: usize) -> Option<UnwindEntry> {
+pub fn unwind_entry_for<'a>(addr: usize) -> Option<&'a UnwindEntry> {
     let uw_tbl = UNWIND_TABLE.get()?;
 
     if let Ok(idx) = uw_tbl.binary_search_by(|v| v.partial_cmp(&addr).unwrap()) {
-        Some(uw_tbl[idx])
+        uw_tbl.get(idx)
     } else {
         None
     }
