@@ -1,0 +1,4 @@
+[build]
+# XXX(aki): This doesn't work, so we need to use the "per-package-target" feature
+# target = "x86_64-unknown-uefi"
+rustflags = ["-Clink-args=/debug:dwarf", "-Cforce-unwind-tables"]

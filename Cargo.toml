@@ -5,4 +5,6 @@ members = [
 	"iosevka-embedded",
 	"taperipper",
 	"tinypng",
+
+	"xtask",
 ]
