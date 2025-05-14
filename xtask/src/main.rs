@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
-use std::{
-    env,
-    path::{Path, PathBuf},
-    process::Command,
-};
-
-use tracing::{debug, error, info, warn};
+use tracing::error;
 use tracing_subscriber::{
     self, Layer,
     filter::{EnvFilter, LevelFilter},
@@ -15,8 +9,9 @@ use tracing_subscriber::{
     util::SubscriberInitExt,
 };
 
-type Error = Box<dyn std::error::Error>;
-type Result = core::result::Result<(), Error>;
+mod commands;
+mod paths;
+mod utils;
 
 fn main() {
     tracing_subscriber::registry()
@@ -25,26 +20,17 @@ fn main() {
                 EnvFilter::builder()
                     .with_default_directive(LevelFilter::INFO.into())
                     .with_env_var("TAPERIPPER_XTASK_LOG_LEVEL")
-                    .from_env_lossy(),
+                    .from_env_lossy()
+                    .add_directive("goblin=info".parse().unwrap()),
             ),
         )
         .init();
 
-    info!("Hello, world!");
-}
+    let args =
+        crate::commands::setup_commands(clap::Command::new("taperipper-xtask")).get_matches();
 
-fn contrib_dir() -> PathBuf {
-    project_root().join("contrib")
-}
-
-fn target_dir() -> PathBuf {
-    project_root().join("target")
-}
-
-fn project_root() -> PathBuf {
-    Path::new(&env!("CARGO_MANIFEST_DIR"))
-        .ancestors()
-        .nth(1)
-        .unwrap()
-        .to_path_buf()
+    if let Err(err) = crate::commands::dispatch(args) {
+        error!("Command Failed!");
+        error!("{err}");
+    }
 }

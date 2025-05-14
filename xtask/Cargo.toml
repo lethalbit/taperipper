@@ -5,5 +5,7 @@ edition = "2024"
 
 [dependencies]
 clap               = "4.5.38"
+git2               = "0.20.2"
+goblin             = { version = "0.9.3", features = ["pe64", "elf64"] }
 tracing            = "0.1.41"
-tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt"] }
+tracing-subscriber = { version = "0.3.19", features = ["registry", "env-filter", "fmt"] }
