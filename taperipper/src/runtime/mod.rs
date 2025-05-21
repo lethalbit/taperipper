@@ -7,6 +7,7 @@ use maitake::{
 
 use uefi::boot;
 
+pub mod smp;
 pub mod time;
 
 pub static MAITAKE_SCHED: StaticScheduler = scheduler::new_static!();
