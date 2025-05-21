@@ -28,7 +28,7 @@ pub mod run {
     };
 
     use clap::{Arg, ArgAction, ArgMatches, Command};
-    use tracing::{debug, info};
+    use tracing::debug;
 
     use crate::{commands::qemu::UefiVars, utils};
 
@@ -70,7 +70,7 @@ pub mod run {
             UefiVars::default()
         } else {
             debug!("Reading UEFI Variables");
-            let mut efi_vafs = BufReader::new(File::open(crate::paths::uefi_vars())?);
+            let efi_vafs = BufReader::new(File::open(crate::paths::uefi_vars())?);
             let cfg: UefiVars = serde_json::from_reader(efi_vafs)?;
             cfg
         };
@@ -85,7 +85,7 @@ pub mod run {
         cfg.variables.push(UefiVar {
             name: "TAPERIPPER_LOG_LEVEL".to_string(),
             guid: TAPERIPPER_UUID.clone(),
-            attr: 3, // TODO(aki): ???
+            attr: 0x07, // TODO(aki): NON_VOLATILE (0x01) | BOOTSERVICE_ACCESS (0x02) | RUNTIME_ACCESS (0x04)
             data: "Debug"
                 .as_bytes()
                 .iter()
