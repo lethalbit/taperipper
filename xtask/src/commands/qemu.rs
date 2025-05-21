@@ -106,17 +106,17 @@ pub mod run {
         )?;
 
         // TODO(aki): Debug logging setting
-        cfg.variables.push(UefiVar {
-            name: "TAPERIPPER_LOG_LEVEL".to_string(),
-            guid: TAPERIPPER_UUID.clone(),
-            attr: 0x07, // TODO(aki): NON_VOLATILE (0x01) | BOOTSERVICE_ACCESS (0x02) | RUNTIME_ACCESS (0x04)
-            data: "Debug"
-                .as_bytes()
-                .iter()
-                .map(|b| format!("{:02X}", b))
-                .collect::<Vec<_>>()
-                .join(""),
-        });
+        // cfg.variables.push(UefiVar {
+        //     name: "TAPERIPPER_LOG_LEVEL".to_string(),
+        //     guid: TAPERIPPER_UUID.clone(),
+        //     attr: 0x07, // TODO(aki): NON_VOLATILE (0x01) | BOOTSERVICE_ACCESS (0x02) | RUNTIME_ACCESS (0x04)
+        //     data: "Debug"
+        //         .as_bytes()
+        //         .iter()
+        //         .map(|b| format!("{:02X}", b))
+        //         .collect::<Vec<_>>()
+        //         .join(""),
+        // });
 
         let mut efi_vars = BufWriter::new(File::create(crate::paths::uefi_vars())?);
         efi_vars.write(serde_json::to_string(&cfg)?.as_bytes())?;
