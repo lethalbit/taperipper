@@ -15,6 +15,7 @@ use uefi::{
             file::{File, FileAttribute, FileMode},
             fs::SimpleFileSystem,
         },
+        misc::Timestamp,
         pi::mp::{CpuPhysicalLocation, MpServices, ProcessorInformation},
     },
     runtime::{self, ResetType, VariableVendor},
@@ -24,6 +25,7 @@ use uefi::{
         cfg::{ACPI_GUID, ACPI2_GUID, ConfigTableEntry, SMBIOS_GUID, SMBIOS3_GUID},
     },
 };
+use uefi_raw::protocol::misc::TimestampProperties;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ExtraTables {
@@ -287,4 +289,14 @@ pub fn get_current_core_info() -> Result<ProcessorInformation, uefi::Error> {
     let mp = get_proto::<MpServices>()?;
 
     Ok(mp.get_processor_info(mp.who_am_i()?)?)
+}
+
+pub fn get_timestamp_properties() -> Result<TimestampProperties, uefi::Error> {
+    let ts = get_proto::<Timestamp>()?;
+    ts.get_properties()
+}
+
+pub fn get_timestamp() -> u64 {
+    let ts = get_proto::<Timestamp>().unwrap();
+    ts.get_timestamp()
 }
