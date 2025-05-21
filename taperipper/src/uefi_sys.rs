@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // UEFI Helpers/Utilities
+#![allow(dead_code)]
 
 use core::{ffi::c_void, ptr};
 use std::os::uefi as uefi_std;

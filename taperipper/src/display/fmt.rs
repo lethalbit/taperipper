@@ -4,6 +4,7 @@
 //
 // There has been a bit of modification, but not enough to call it substantially unique
 // or novel.
+#![allow(dead_code)]
 
 use core::fmt;
 use tracing::field::DebugValue;
