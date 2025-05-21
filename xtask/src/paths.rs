@@ -60,6 +60,10 @@ pub fn target_release() -> PathBuf {
     target_dir().join("x86_64-unknown-uefi").join("release")
 }
 
+pub fn uefi_vars() -> PathBuf {
+    target_dir().join("uefi-vars.json")
+}
+
 pub fn target_dir() -> PathBuf {
     project_root().join("target")
 }

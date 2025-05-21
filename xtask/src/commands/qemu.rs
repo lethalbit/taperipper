@@ -1,12 +1,32 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct UefiVar {
+    name: String,
+    guid: Uuid,
+    attr: u32,
+    data: String,
+}
+
+#[derive(Default, Debug, Deserialize, Serialize)]
+pub struct UefiVars {
+    version: u32,
+    variables: Vec<UefiVar>,
+}
+
 pub mod run {
-    use std::fs;
+    use std::{
+        fs::{self, File},
+        io::{BufWriter, Write},
+    };
 
     use clap::{Arg, ArgAction, ArgMatches, Command};
     use tracing::debug;
 
-    use crate::utils;
+    use crate::{commands::qemu::UefiVars, utils};
 
     pub const COMMAND_NAME: &str = "run-qemu";
 
@@ -37,6 +57,12 @@ pub mod run {
         if !crate::paths::efi_boot_dir().exists() {
             debug!("EFI boot directory does not exist, creating");
             fs::create_dir_all(crate::paths::efi_boot_dir())?;
+        }
+
+        if !crate::paths::uefi_vars().exists() {
+            debug!("UEFI Variables don't exist, creating");
+            let mut efi_vars = BufWriter::new(File::create(crate::paths::uefi_vars())?);
+            efi_vars.write(serde_json::to_string(&UefiVars::default())?.as_bytes())?;
         }
 
         let boot_img = crate::paths::efi_boot_dir().join("BOOTx64.efi");

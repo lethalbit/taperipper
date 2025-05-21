@@ -131,6 +131,12 @@ pub fn common_run_qemu(efi_root: &PathBuf) -> process::Command {
         .as_str(),
         "-drive",
         format!("format=raw,file=fat:rw:{}", &efi_root.display()).as_str(),
+        "-device",
+        format!(
+            "uefi-vars-x64,jsonfile={}",
+            crate::paths::uefi_vars().display()
+        )
+        .as_str(),
     ]);
 
     qemu
