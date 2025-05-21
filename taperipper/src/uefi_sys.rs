@@ -15,6 +15,7 @@ use uefi::{
             file::{File, FileAttribute, FileMode},
             fs::SimpleFileSystem,
         },
+        pi::mp::{CpuPhysicalLocation, MpServices, ProcessorInformation},
     },
     runtime::{self, ResetType},
     system,
@@ -242,4 +243,29 @@ pub fn read_slice(file_path: &str, from: u64, buff: &mut [u8]) -> Result<usize, 
     // Fill the slice from the file
     file.read(buff)
         .map_err(|_| uefi::Error::new(uefi::Status::ABORTED, ()))
+}
+
+pub fn get_cpu_info(cpu: usize) -> Result<ProcessorInformation, uefi::Error> {
+    let mp = get_proto::<MpServices>()?;
+
+    Ok(mp.get_processor_info(cpu)?)
+}
+
+pub fn get_core_count() -> Result<(usize, usize), uefi::Error> {
+    let mp = get_proto::<MpServices>()?;
+    let proc_count = mp.get_number_of_processors()?;
+
+    Ok((proc_count.total, proc_count.enabled))
+}
+
+pub fn get_current_core() -> Result<usize, uefi::Error> {
+    let mp = get_proto::<MpServices>()?;
+
+    Ok(mp.who_am_i()?)
+}
+
+pub fn get_current_core_info() -> Result<ProcessorInformation, uefi::Error> {
+    let mp = get_proto::<MpServices>()?;
+
+    Ok(mp.get_processor_info(mp.who_am_i()?)?)
 }
