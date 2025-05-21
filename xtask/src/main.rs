@@ -33,8 +33,9 @@ fn main() {
 
     if let Some(cmd) = args.subcommand() {
         if let Some(cmd_exec) = commands::exec(cmd.0) {
-            if cmd_exec(cmd.1).is_err() {
+            if let Err(err) = cmd_exec(cmd.1) {
                 error!("Command Failed!");
+                error!("{err}");
             }
         } else {
             error!("Unimplemented subcommand '{}'", cmd.0)
