@@ -23,12 +23,13 @@ iosevka-embedded  = { path = "../iosevka-embedded" }
 tinypng           = { path = "../tinypng" }
 
 # Debugging/Stack Unwinding
+yaxpeax-x86     = { version = "2.0.0", default-features = false, optional = true }
 goblin          = { version = "0.9", default-features =  false, features = ["pe64"], optional = true }
 rustc-demangle  = { version = "0.1", optional = true }
 
 [features]
 default         = ["stack-unwinding"]
-stack-unwinding = ["dep:goblin", "dep:rustc-demangle",]
+stack-unwinding = ["dep:goblin", "dep:rustc-demangle", "dep:yaxpeax-x86"]
 
 [[bin]]
 name  = "taperipper"
