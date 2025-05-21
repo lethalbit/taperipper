@@ -114,6 +114,7 @@ fn main() {
 
     MAITAKE_SCHED.spawn(async {
         debug!("Hello everynyan!");
+        panic!("OW");
     });
 
     // TODO(aki):

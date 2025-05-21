@@ -3,10 +3,11 @@
 // stack tracing in UEFI.
 // Currently it's amd64 *only* but could be expanded to
 // other ISAs if needed.
+#![allow(dead_code)]
 
 use core::{arch::asm, ffi::c_void, fmt};
 
-use tracing::debug;
+use tracing::{debug, warn};
 
 use crate::debug::info;
 
@@ -57,6 +58,8 @@ impl Trace {
 
         let unwind_info = info::unwind_entry_for(ip);
         debug!("Unwind info for {:#018x}: {:?}", ip, unwind_info);
+
+        warn!("Unwinding not implemented yet! Bug Aki about this!");
 
         // Compact the vec
         frames.shrink_to_fit();
