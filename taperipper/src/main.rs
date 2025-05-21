@@ -2,14 +2,14 @@
 
 #![feature(uefi_std, panic_payload_as_str, panic_can_unwind)]
 
-use core::arch::asm;
+use core::{arch::asm, time};
 use std::{
     panic,
     sync::{Arc, RwLock},
 };
 
 use tracing::{self, debug, error, info, trace, warn};
-use uefi::system;
+use uefi::{boot, system};
 
 #[cfg(feature = "stack-unwinding")]
 mod debug;
@@ -23,6 +23,10 @@ use crate::{
     display::framebuffer::Framebuffer,
     log::{ConsoleSubscriber, GOPConsole, QEMUDebugcon, TXTConsole, writer},
 };
+
+use maitake::scheduler::{self, StaticScheduler};
+
+static MAITAKE_SCHED: StaticScheduler = scheduler::new_static!();
 
 fn setup_logging(fb: &Arc<RwLock<Framebuffer>>, level: tracing::Level) {
     // NOTE(aki): This is probably less than ideal, but *shrug*
@@ -107,6 +111,26 @@ fn main() {
     }
 
     info!("Taperipper v{}", env!("CARGO_PKG_VERSION"));
+
+    MAITAKE_SCHED.spawn(async {
+        debug!("Hello everynyan!");
+    });
+
+    // TODO(aki):
+    // This is:
+    //  1) Kinda silly, need a better way to do it
+    //  2) Not SMP-friendly, we need to figure out how to get MP executor stuff working
+    //  3) Missing UEFI event triggers for tasks, which entails
+    //    a) We need to be able to have a task wait for a specific event
+    //    b) Have said event be able to wake the task that wants it
+    //    c) Deal with the timer task, so we can have some sort of clock for non-blocking sleeps
+    loop {
+        let tick = MAITAKE_SCHED.tick();
+        if !tick.has_remaining {
+            boot::stall(1000);
+        }
+    }
+
     crate::uefi_sys::shutdown_now();
 }
 

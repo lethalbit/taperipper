@@ -12,9 +12,9 @@ uefi-raw = "0.10.0"
 
 # Async runtime bits
 # TODO(aki): Do we want to roll our own, eventually?
-cordyceps    = { git = "https://github.com/hawkw/mycelium", rev = "435f310", package = "cordyceps", default-features = false, features = ["alloc"] }
-maitake-sync = { git = "https://github.com/hawkw/mycelium", rev = "435f310", package = "maitake-sync", default-features = false, features = ["alloc"] }
-maitake      = { git = "https://github.com/hawkw/mycelium", rev = "435f310", package = "maitake"     , default-features = false, features = ["alloc"] }
+cordyceps    = { git = "https://github.com/hawkw/mycelium", rev = "435f310", package = "cordyceps",    default-features = false, features = ["alloc"] }
+maitake-sync = { git = "https://github.com/hawkw/mycelium", rev = "435f310", package = "maitake-sync", default-features = false, features = ["alloc", "tracing"] }
+maitake      = { git = "https://github.com/hawkw/mycelium", rev = "435f310", package = "maitake"     , default-features = false, features = ["alloc", "tracing-01"] }
 
 # Logging
 tracing            = { version = "0.1.41", default-features = false }
