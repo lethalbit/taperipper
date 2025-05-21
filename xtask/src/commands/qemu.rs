@@ -3,7 +3,7 @@
 pub mod run {
     use std::fs;
 
-    use clap::{ArgMatches, Command};
+    use clap::{Arg, ArgAction, ArgMatches, Command};
     use tracing::debug;
 
     use crate::utils;
@@ -11,7 +11,20 @@ pub mod run {
     pub const COMMAND_NAME: &str = "run-qemu";
 
     pub fn init() -> Command {
-        crate::commands::cmd_common(Command::new(COMMAND_NAME).about("Run Taperipper in QEMU"))
+        crate::commands::cmd_common(
+            Command::new(COMMAND_NAME)
+                .about("Run Taperipper in QEMU")
+                .arg(
+                    Arg::new("CORES")
+                        .short('c')
+                        .long("cores")
+                        .action(ArgAction::Set)
+                        .value_name("CORES")
+                        .default_value("4")
+                        .value_parser(clap::value_parser!(usize))
+                        .help("Number of CPU cores to use"),
+                ),
+        )
     }
 
     pub fn exec(args: &ArgMatches) -> utils::Result {
@@ -34,7 +47,16 @@ pub mod run {
 
         if !crate::utils::common_run_qemu(&crate::paths::efi_root())
             .current_dir(crate::paths::ovmf_dir())
-            .args(&["-enable-kvm", "-debugcon", "stdio"])
+            .args(&[
+                "-enable-kvm",
+                "-debugcon",
+                "stdio",
+                "-smp",
+                args.get_one::<usize>("CORES")
+                    .unwrap_or(&2)
+                    .to_string()
+                    .as_str(),
+            ])
             .status()?
             .success()
         {
