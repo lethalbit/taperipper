@@ -5,6 +5,7 @@
 use core::{arch::asm, time};
 use std::{
     panic,
+    str::FromStr,
     sync::{Arc, RwLock},
 };
 
@@ -25,6 +26,11 @@ use crate::{
 };
 
 use maitake::scheduler::{self, StaticScheduler};
+
+#[cfg(debug_assertions)]
+const DEFAULT_LOG_LEVEL: tracing::Level = tracing::Level::DEBUG;
+#[cfg(not(debug_assertions))]
+const DEFAULT_LOG_LEVEL: tracing::Level = tracing::Level::INFO;
 
 static MAITAKE_SCHED: StaticScheduler = scheduler::new_static!();
 
@@ -80,7 +86,15 @@ fn main() {
             Arc::new(RwLock::new(Framebuffer::default()))
         };
 
-    setup_logging(&fb, tracing::Level::DEBUG);
+    // Get the Log level from the UEFI vars, or a default level
+    let log_level = if let Some(var) = uefi_sys::get_var("TAPERIPPER_LOG_LEVEL") {
+        tracing::Level::from_str(str::from_utf8(&var).unwrap_or("Debug"))
+            .unwrap_or(DEFAULT_LOG_LEVEL)
+    } else {
+        DEFAULT_LOG_LEVEL
+    };
+
+    setup_logging(&fb, log_level);
 
     if cfg!(feature = "stack-unwinding") {
         if let Err(err) = info::load_unwind_table() {

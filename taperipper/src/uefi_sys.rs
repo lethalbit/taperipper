@@ -17,7 +17,7 @@ use uefi::{
         },
         pi::mp::{CpuPhysicalLocation, MpServices, ProcessorInformation},
     },
-    runtime::{self, ResetType},
+    runtime::{self, ResetType, VariableVendor},
     system,
     table::{
         self,
@@ -243,6 +243,25 @@ pub fn read_slice(file_path: &str, from: u64, buff: &mut [u8]) -> Result<usize, 
     // Fill the slice from the file
     file.read(buff)
         .map_err(|_| uefi::Error::new(uefi::Status::ABORTED, ()))
+}
+
+pub fn get_var(name: &str) -> Option<Box<[u8]>> {
+    let mut buf: Vec<u16> = Vec::new();
+    buf.reserve(name.chars().count() * 4);
+
+    let var_name = CStr16::from_str_with_buf(name, buf.as_mut_slice()).ok();
+
+    if var_name.is_none() {
+        return None;
+    }
+
+    if let Some(var) =
+        runtime::get_variable_boxed(var_name.unwrap(), &VariableVendor::GLOBAL_VARIABLE).ok()
+    {
+        Some(var.0)
+    } else {
+        None
+    }
 }
 
 pub fn get_cpu_info(cpu: usize) -> Result<ProcessorInformation, uefi::Error> {
