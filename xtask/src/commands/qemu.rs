@@ -5,28 +5,34 @@ use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct UefiVar {
-    name: String,
-    guid: Uuid,
-    attr: u32,
-    data: String,
+    pub name: String,
+    pub guid: Uuid,
+    pub attr: u32,
+    pub data: String,
 }
 
 #[derive(Default, Debug, Deserialize, Serialize)]
 pub struct UefiVars {
-    version: u32,
-    variables: Vec<UefiVar>,
+    pub version: u32,
+    pub variables: Vec<UefiVar>,
 }
+
+pub const TAPERIPPER_UUID: Uuid = Uuid::from_bytes([
+    0x3c, 0x8c, 0x17, 0xd5, 0x74, 0xda, 0x4c, 0x78, 0xbe, 0x4e, 0x14, 0x3e, 0x68, 0xb2, 0x6b, 0xf8,
+]);
 
 pub mod run {
     use std::{
         fs::{self, File},
-        io::{BufWriter, Write},
+        io::{BufReader, BufWriter, Write},
     };
 
     use clap::{Arg, ArgAction, ArgMatches, Command};
-    use tracing::debug;
+    use tracing::{debug, info};
 
     use crate::{commands::qemu::UefiVars, utils};
+
+    use super::{TAPERIPPER_UUID, UefiVar};
 
     pub const COMMAND_NAME: &str = "run-qemu";
 
@@ -59,17 +65,38 @@ pub mod run {
             fs::create_dir_all(crate::paths::efi_boot_dir())?;
         }
 
-        if !crate::paths::uefi_vars().exists() {
-            debug!("UEFI Variables don't exist, creating");
-            let mut efi_vars = BufWriter::new(File::create(crate::paths::uefi_vars())?);
-            efi_vars.write(serde_json::to_string(&UefiVars::default())?.as_bytes())?;
-        }
+        let mut cfg = if !crate::paths::uefi_vars().exists() {
+            debug!("UEFI Variables don't exist, creating default");
+            UefiVars::default()
+        } else {
+            debug!("Reading UEFI Variables");
+            let mut efi_vafs = BufReader::new(File::open(crate::paths::uefi_vars())?);
+            let cfg: UefiVars = serde_json::from_reader(efi_vafs)?;
+            cfg
+        };
 
         let boot_img = crate::paths::efi_boot_dir().join("BOOTx64.efi");
         crate::utils::copy_if_newer(
             crate::paths::target_dir_for_type(tar_type).join("taperipper.efi"),
             boot_img,
         )?;
+
+        // TODO(aki): Debug logging setting
+        cfg.variables.push(UefiVar {
+            name: "TAPERIPPER_LOG_LEVEL".to_string(),
+            guid: TAPERIPPER_UUID.clone(),
+            attr: 3, // TODO(aki): ???
+            data: "Debug"
+                .as_bytes()
+                .iter()
+                .map(|b| format!("{:02X}", b))
+                .collect::<Vec<_>>()
+                .join(""),
+        });
+
+        let mut efi_vars = BufWriter::new(File::create(crate::paths::uefi_vars())?);
+        efi_vars.write(serde_json::to_string(&cfg)?.as_bytes())?;
+        drop(efi_vars);
 
         if !crate::utils::common_run_qemu(&crate::paths::efi_root())
             .current_dir(crate::paths::ovmf_dir())
