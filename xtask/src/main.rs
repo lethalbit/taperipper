@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
+use clap::Command;
 use tracing::error;
 use tracing_subscriber::{
     self, Layer,
@@ -26,11 +27,19 @@ fn main() {
         )
         .init();
 
-    let args =
-        crate::commands::setup_commands(clap::Command::new("taperipper-xtask")).get_matches();
+    let args = Command::new("taperipper-xtask")
+        .subcommands(commands::init())
+        .get_matches();
 
-    if let Err(err) = crate::commands::dispatch(args) {
-        error!("Command Failed!");
-        error!("{err}");
+    if let Some(cmd) = args.subcommand() {
+        if let Some(cmd_exec) = commands::exec(cmd.0) {
+            if cmd_exec(cmd.1).is_err() {
+                error!("Command Failed!");
+            }
+        } else {
+            error!("Unimplemented subcommand '{}'", cmd.0)
+        }
+    } else {
+        error!("Unable to find command!");
     }
 }

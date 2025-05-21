@@ -1,58 +1,63 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
+use clap::{Arg, ArgMatches, Command};
+
 use crate::utils;
 
 mod ovmf;
 mod qemu;
 mod taperipper;
 
-pub fn setup_commands(command: clap::Command) -> clap::Command {
-    let arg_target_type = clap::Arg::new("TARGET_TYPE")
-        .value_parser(["debug", "release"])
-        .default_value("debug")
-        .help("h");
+pub type CmdExec = fn(&ArgMatches) -> utils::Result;
 
-    command
-        .subcommand(
-            clap::Command::new("run-qemu")
-                .about("Run the Taperipper UEFI image in QEMU")
-                .arg(arg_target_type.clone()),
-        )
-        .subcommand(
-            clap::Command::new("build")
-                .about("Build everything if needed")
-                .arg(arg_target_type.clone()),
-        )
-        .subcommand(
-            clap::Command::new("build-taperipper")
-                .about("Build only the taperipper UEFI image if needed")
-                .arg(arg_target_type.clone()),
-        )
-        .subcommand(
-            clap::Command::new("build-ovmf-fw").about("Build only the OVMF firmware if needed"),
-        )
-        .subcommand(
-            clap::Command::new("build-ovmf-dbg")
-                .about("Build only the OVMF debug symbols if needed"),
-        )
-}
+// The "meta" build command
+pub mod build {
+    use clap::{ArgMatches, Command};
 
-pub fn dispatch(args: clap::ArgMatches) -> utils::Result {
-    match args.subcommand().unwrap() {
-        ("run-qemu", args) => qemu::run(args),
-        ("build", args) => build_all(args),
-        ("build-taperipper", args) => taperipper::build(args),
-        ("build-ovmf-fw", args) => ovmf::build_firmware(args),
-        ("build-ovmf-dbg", args) => ovmf::build_debug(args),
-        (_, __) => unreachable!(),
+    use crate::utils;
+
+    use super::{ovmf, taperipper};
+
+    pub const COMMAND_NAME: &str = "build";
+
+    pub fn init() -> Command {
+        crate::commands::cmd_common(Command::new(COMMAND_NAME))
+    }
+
+    pub fn exec(args: &ArgMatches) -> utils::Result {
+        crate::commands::exec(ovmf::firmware::COMMAND_NAME).ok_or("")?(args)?;
+        crate::commands::exec(ovmf::debug::COMMAND_NAME).ok_or("")?(args)?;
+        crate::commands::exec(taperipper::build::COMMAND_NAME).ok_or("")?(args)?;
+
+        Ok(())
     }
 }
 
-fn build_all(args: &clap::ArgMatches) -> utils::Result {
-    // Build the OVMF if we don't have it
-    let _ = ovmf::build_firmware(args)?;
-    // Built the OVMF debug info setup next if we need to
-    let _ = ovmf::build_debug(args)?;
-    // Finally build the taperipper UEFI image itself
-    taperipper::build(args)
+pub fn cmd_common(cmd: Command) -> Command {
+    cmd.arg(
+        Arg::new("TARGET_TYPE")
+            .value_parser(["debug", "release"])
+            .default_value("debug"),
+    )
+}
+
+pub fn init() -> Vec<Command> {
+    vec![
+        build::init(),
+        ovmf::firmware::init(),
+        ovmf::debug::init(),
+        qemu::run::init(),
+        taperipper::build::init(),
+    ]
+}
+
+pub fn exec(command: &str) -> Option<CmdExec> {
+    match command {
+        build::COMMAND_NAME => Some(build::exec),
+        ovmf::firmware::COMMAND_NAME => Some(ovmf::firmware::exec),
+        ovmf::debug::COMMAND_NAME => Some(ovmf::debug::exec),
+        qemu::run::COMMAND_NAME => Some(qemu::run::exec),
+        taperipper::build::COMMAND_NAME => Some(taperipper::build::exec),
+        _ => None,
+    }
 }
