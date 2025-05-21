@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
+#![allow(dead_code)]
 
 use std::path::{Path, PathBuf};
 

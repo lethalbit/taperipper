@@ -13,7 +13,7 @@ use tracing::{debug, info, warn};
 const EDKII_REPO: &str = "https://github.com/tianocore/edk2.git";
 const EDKII_TAG: &str = "edk2-stable202408.01";
 
-pub fn build_firmware(args: &clap::ArgMatches) -> crate::utils::Result {
+pub fn build_firmware(_: &clap::ArgMatches) -> crate::utils::Result {
     // Some path constants for EDKII
     #[allow(non_snake_case)]
     let OVMF_BUILD = crate::paths::edk2_dir()
@@ -137,7 +137,7 @@ pub fn build_firmware(args: &clap::ArgMatches) -> crate::utils::Result {
     Ok(())
 }
 
-pub fn build_debug(args: &clap::ArgMatches) -> crate::utils::Result {
+pub fn build_debug(_: &clap::ArgMatches) -> crate::utils::Result {
     #[allow(non_snake_case)]
     let OVMF_DBG_LOG = crate::paths::ovmf_dir().join("qemu.log");
 
