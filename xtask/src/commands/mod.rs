@@ -25,7 +25,6 @@ pub mod build {
     }
 
     pub fn exec(args: &ArgMatches) -> utils::Result {
-        crate::commands::exec(ovmf::firmware::COMMAND_NAME).ok_or("")?(args)?;
         crate::commands::exec(ovmf::debug::COMMAND_NAME).ok_or("")?(args)?;
         crate::commands::exec(taperipper::build::COMMAND_NAME).ok_or("")?(args)?;
 

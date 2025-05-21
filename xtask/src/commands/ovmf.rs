@@ -18,7 +18,7 @@ pub mod firmware {
     pub const COMMAND_NAME: &str = "build-ovmf-fw";
 
     pub fn init() -> Command {
-        Command::new(COMMAND_NAME).about("Build the EDI2 OVMF Firmware")
+        Command::new(COMMAND_NAME).about("Build the EDK2 OVMF Firmware")
     }
 
     pub fn exec(_: &ArgMatches) -> utils::Result {
@@ -155,7 +155,7 @@ pub mod debug {
     use clap::{ArgMatches, Command};
     use tracing::{debug, info, warn};
 
-    use crate::utils;
+    use crate::{commands::ovmf::firmware, utils};
 
     pub const COMMAND_NAME: &str = "build-ovmf-dbg";
 
@@ -163,7 +163,11 @@ pub mod debug {
         Command::new(COMMAND_NAME).about("Build the EDK2 OVMF Debug maps")
     }
 
-    pub fn exec(_: &ArgMatches) -> utils::Result {
+    pub fn exec(args: &ArgMatches) -> utils::Result {
+        crate::commands::exec(firmware::COMMAND_NAME).ok_or("Unable to build OVMF Firmware")?(
+            args,
+        )?;
+
         #[allow(non_snake_case)]
         let OVMF_DBG_LOG = crate::paths::ovmf_dir().join("qemu.log");
 
