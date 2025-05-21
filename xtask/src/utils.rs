@@ -112,7 +112,7 @@ where
     Ok(())
 }
 
-pub fn common_run_qemu(efi_root: &PathBuf) -> process::Command {
+pub fn common_run_qemu(efi_root: Option<&PathBuf>) -> process::Command {
     let mut qemu =
         process::Command::new(env::var("QEMU").unwrap_or("qemu-system-x86_64".to_string()));
 
@@ -129,8 +129,6 @@ pub fn common_run_qemu(efi_root: &PathBuf) -> process::Command {
             crate::paths::ovmf_file_vars().display()
         )
         .as_str(),
-        "-drive",
-        format!("format=raw,file=fat:rw:{}", &efi_root.display()).as_str(),
         "-device",
         format!(
             "uefi-vars-x64,jsonfile={}",
@@ -138,6 +136,13 @@ pub fn common_run_qemu(efi_root: &PathBuf) -> process::Command {
         )
         .as_str(),
     ]);
+
+    if let Some(efi_root) = efi_root {
+        qemu.args(&[
+            "-drive",
+            format!("format=raw,file=fat:rw:{}", &efi_root.display()).as_str(),
+        ]);
+    }
 
     qemu
 }

@@ -185,7 +185,7 @@ pub mod debug {
         if !OVMF_DBG_LOG.exists() {
             info!("OVMF Debug log does not exist, generating");
 
-            if !crate::utils::common_run_qemu(&crate::paths::ovmf_esp())
+            if !crate::utils::common_run_qemu(Some(&crate::paths::ovmf_esp()))
                 .current_dir(crate::paths::ovmf_dir())
                 .args(&[
                     "-enable-kvm",

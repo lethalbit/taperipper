@@ -46,6 +46,7 @@ pub fn init() -> Vec<Command> {
         ovmf::firmware::init(),
         ovmf::debug::init(),
         qemu::run::init(),
+        qemu::shell::init(),
         taperipper::build::init(),
     ]
 }
@@ -56,6 +57,7 @@ pub fn exec(command: &str) -> Option<CmdExec> {
         ovmf::firmware::COMMAND_NAME => Some(ovmf::firmware::exec),
         ovmf::debug::COMMAND_NAME => Some(ovmf::debug::exec),
         qemu::run::COMMAND_NAME => Some(qemu::run::exec),
+        qemu::shell::COMMAND_NAME => Some(qemu::shell::exec),
         taperipper::build::COMMAND_NAME => Some(taperipper::build::exec),
         _ => None,
     }

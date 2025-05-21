@@ -21,6 +21,30 @@ pub const TAPERIPPER_UUID: Uuid = Uuid::from_bytes([
     0x8b, 0xe4, 0xdf, 0x61, 0x93, 0xca, 0x11, 0xd2, 0xaa, 0x0d, 0x00, 0xe0, 0x98, 0x03, 0x2b, 0x8c,
 ]);
 
+pub mod shell {
+    use clap::{ArgMatches, Command};
+
+    use crate::utils;
+
+    pub const COMMAND_NAME: &str = "uefi-shell";
+
+    pub fn init() -> Command {
+        Command::new(COMMAND_NAME)
+    }
+
+    pub fn exec(args: &ArgMatches) -> utils::Result {
+        if !crate::utils::common_run_qemu(None)
+            .current_dir(crate::paths::ovmf_dir())
+            .status()?
+            .success()
+        {
+            Err("QEMU Exited with an error condition!")?;
+        }
+
+        Ok(())
+    }
+}
+
 pub mod run {
     use std::{
         fs::{self, File},
@@ -98,7 +122,7 @@ pub mod run {
         efi_vars.write(serde_json::to_string(&cfg)?.as_bytes())?;
         drop(efi_vars);
 
-        if !crate::utils::common_run_qemu(&crate::paths::efi_root())
+        if !crate::utils::common_run_qemu(Some(&crate::paths::efi_root()))
             .current_dir(crate::paths::ovmf_dir())
             .args(&[
                 "-enable-kvm",
