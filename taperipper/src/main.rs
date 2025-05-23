@@ -1,8 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
-#![feature(uefi_std, panic_payload_as_str, panic_can_unwind)]
+#![feature(
+    uefi_std,
+    panic_payload_as_str,
+    panic_can_unwind,
+    duration_constructors_lite
+)]
 
 use core::arch::asm;
+use maitake::time;
 use std::{
     panic,
     str::FromStr,
@@ -126,10 +132,17 @@ fn main() {
 
     runtime::spawn(async {
         debug!("Hello everynyan!");
+        time::sleep(time::Duration::from_millis(7)).await;
     });
 
     runtime::spawn(async {
+        time::sleep(time::Duration::from_millis(3)).await;
         debug!("Meow");
+    });
+
+    runtime::spawn(async {
+        time::sleep(time::Duration::from_secs(60)).await;
+        panic!("AWAWAWAWAWAW");
     });
 
     runtime::run_scheduler();
