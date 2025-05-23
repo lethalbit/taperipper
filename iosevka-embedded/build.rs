@@ -98,6 +98,13 @@ fn main() {
         let output = FontConverter::new(&bdf_font, &font_name.to_uppercase())
             .missing_glyph_substitute('*')
             .glyphs(Mapping::Ascii)
+            // Smooth boxes
+            .glyphs('█'..='▏')
+            // Misc
+            .glyphs(&['‼', '‽', '⁇', '⁈', '⁉', '№', '⍉', '➜'][..])
+            // Box drawing
+            .glyphs('╭'..='╰')
+            .glyphs(&['─', '│', '├', '┤', '┬', '┴'][..])
             .convert_eg_bdf()
             .expect("Unable to convert BDF font");
 
