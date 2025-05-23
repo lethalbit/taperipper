@@ -18,9 +18,64 @@ use embedded_graphics::{
     text::Text,
 };
 
-use iosevka_embedded::{IOSEVKAFIXED_EXTENDEDBOLD_16, IOSEVKAFIXED_EXTENDEDTHIN_16};
+use iosevka_embedded::{
+    IOSEVKAFIXED_EXTENDEDBOLD_8, IOSEVKAFIXED_EXTENDEDBOLD_16, IOSEVKAFIXED_EXTENDEDBOLD_24,
+    IOSEVKAFIXED_EXTENDEDBOLD_32, IOSEVKAFIXED_EXTENDEDTHIN_8, IOSEVKAFIXED_EXTENDEDTHIN_16,
+    IOSEVKAFIXED_EXTENDEDTHIN_24, IOSEVKAFIXED_EXTENDEDTHIN_32,
+};
 
 use crate::{display::formatting, uefi_sys};
+
+pub struct FramebufferFont<'a> {
+    normal: eg_bdf::BdfFont<'a>,
+    bold: eg_bdf::BdfFont<'a>,
+    height: usize,
+    width: usize,
+}
+
+impl<'a> FramebufferFont<'a> {
+    pub const fn new(normal: eg_bdf::BdfFont<'a>, bold: eg_bdf::BdfFont<'a>) -> Self {
+        Self {
+            bold: bold,
+            height: (normal.ascent + normal.descent) as usize,
+            // XXX(aki): This is kinda janky but it's monospace so should be the same for all
+            width: normal.glyphs[0].device_width as usize,
+            normal: normal,
+        }
+    }
+
+    pub fn height(&self) -> usize {
+        self.height
+    }
+
+    pub fn width(&self) -> usize {
+        self.width
+    }
+
+    pub fn for_style(&self, style: formatting::Style) -> &eg_bdf::BdfFont<'a> {
+        match style {
+            formatting::Style::Bold => &self.bold,
+            _ => &self.normal,
+        }
+    }
+
+    pub fn normal(&self) -> &eg_bdf::BdfFont<'a> {
+        &self.normal
+    }
+
+    pub fn bold(&self) -> &eg_bdf::BdfFont<'a> {
+        &self.normal
+    }
+}
+
+const IOSEVKAFIXED_8: FramebufferFont<'static> =
+    FramebufferFont::new(IOSEVKAFIXED_EXTENDEDTHIN_8, IOSEVKAFIXED_EXTENDEDBOLD_8);
+const IOSEVKAFIXED_16: FramebufferFont<'static> =
+    FramebufferFont::new(IOSEVKAFIXED_EXTENDEDTHIN_16, IOSEVKAFIXED_EXTENDEDBOLD_16);
+const IOSEVKAFIXED_24: FramebufferFont<'static> =
+    FramebufferFont::new(IOSEVKAFIXED_EXTENDEDTHIN_24, IOSEVKAFIXED_EXTENDEDBOLD_24);
+const IOSEVKAFIXED_32: FramebufferFont<'static> =
+    FramebufferFont::new(IOSEVKAFIXED_EXTENDEDTHIN_32, IOSEVKAFIXED_EXTENDEDBOLD_32);
 
 #[derive(Clone, Copy, Debug)]
 pub struct Framebuffer {
@@ -88,10 +143,8 @@ impl Framebuffer {
     pub const MAX_WIDTH: usize = 1680;
     pub const MAX_HEIGHT: usize = 1050;
 
-    // NOTE(aki): We have a fixed font, and these numbers are kinda just wiggled in by eye, we need to fix that.
-    pub const FONT_HEIGHT: usize =
-        (IOSEVKAFIXED_EXTENDEDTHIN_16.ascent + IOSEVKAFIXED_EXTENDEDTHIN_16.descent) as usize;
-    pub const FONT_WIDTH: usize = 10;
+    // TODO(aki): Eventually pass this in on FB construction so we can set it via a UEFI var
+    pub const FONT: &FramebufferFont<'static> = &IOSEVKAFIXED_16;
 
     pub fn is_valid(&self) -> bool {
         !self.raw_fb.is_null() && self.size() != 0
@@ -120,11 +173,11 @@ impl Framebuffer {
     }
 
     pub fn width_chars(&self) -> usize {
-        self.x / Framebuffer::FONT_WIDTH
+        self.x / Framebuffer::FONT.width()
     }
 
     pub fn height_chars(&self) -> usize {
-        self.y / Framebuffer::FONT_HEIGHT
+        self.y / Framebuffer::FONT.height()
     }
 
     // TODO(aki): Maybe we should allow for the background/foreground defaults to be set?
@@ -155,11 +208,11 @@ impl Framebuffer {
         let src = Rectangle {
             top_left: Point {
                 x: 0,
-                y: (Framebuffer::FONT_HEIGHT * lines).try_into().unwrap(),
+                y: (Framebuffer::FONT.height() * lines).try_into().unwrap(),
             },
             size: Size {
                 width: self.x.try_into().unwrap(),
-                height: (self.y - (Framebuffer::FONT_HEIGHT * lines))
+                height: (self.y - (Framebuffer::FONT.height() * lines))
                     .try_into()
                     .unwrap(),
             },
@@ -268,10 +321,7 @@ impl DrawTarget for Framebuffer {
 impl fmt::Write for Framebuffer {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         let text_style: BdfTextStyle<'_, Rgb888> = BdfTextStyle::new(
-            match self.style {
-                formatting::Style::Bold => &IOSEVKAFIXED_EXTENDEDBOLD_16,
-                _ => &IOSEVKAFIXED_EXTENDEDTHIN_16,
-            },
+            Framebuffer::FONT.for_style(self.style),
             self.fg_color.into(),
         );
 
@@ -287,10 +337,10 @@ impl fmt::Write for Framebuffer {
                 let end_pos = self.width_chars() - self.cursor_x;
 
                 let text_pos = Point::new(
-                    (self.cursor_x * Framebuffer::FONT_WIDTH)
+                    (self.cursor_x * Framebuffer::FONT.width())
                         .try_into()
                         .unwrap(),
-                    ((self.cursor_y * Framebuffer::FONT_HEIGHT) + Framebuffer::FONT_HEIGHT)
+                    ((self.cursor_y * Framebuffer::FONT.height()) + Framebuffer::FONT.height())
                         .try_into()
                         .unwrap(),
                 );
@@ -301,7 +351,9 @@ impl fmt::Write for Framebuffer {
 
                 self.cursor_y += 1;
 
-                if (self.cursor_y * Framebuffer::FONT_HEIGHT) + Framebuffer::FONT_HEIGHT >= self.y {
+                if (self.cursor_y * Framebuffer::FONT.height()) + Framebuffer::FONT.height()
+                    >= self.y
+                {
                     self.scroll(1);
                     self.cursor_x = 0;
                 }
@@ -313,10 +365,10 @@ impl fmt::Write for Framebuffer {
             if line != "\n" {
                 // We know the line will fit, write it
                 let text_pos = Point::new(
-                    (self.cursor_x * Framebuffer::FONT_WIDTH)
+                    (self.cursor_x * Framebuffer::FONT.width())
                         .try_into()
                         .unwrap(),
-                    ((self.cursor_y * Framebuffer::FONT_HEIGHT) + Framebuffer::FONT_HEIGHT)
+                    ((self.cursor_y * Framebuffer::FONT.height()) + Framebuffer::FONT.height())
                         .try_into()
                         .unwrap(),
                 );
@@ -336,7 +388,7 @@ impl fmt::Write for Framebuffer {
             }
 
             // If the row cursor hits the edge of the framebuffer, force a scroll
-            if (self.cursor_y * Framebuffer::FONT_HEIGHT) + Framebuffer::FONT_HEIGHT > self.y {
+            if (self.cursor_y * Framebuffer::FONT.height()) + Framebuffer::FONT.height() > self.y {
                 self.scroll(1);
                 self.cursor_x = 0;
             }
