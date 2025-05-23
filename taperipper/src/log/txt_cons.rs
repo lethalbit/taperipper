@@ -16,7 +16,7 @@ use tracing::Metadata;
 use uefi::{proto::console::text::Output, table};
 
 use crate::{
-    display::{color, style},
+    display::{formatting, style},
     log::writer,
     uefi_sys,
 };
@@ -25,8 +25,8 @@ use crate::{
 pub struct TXTConsole {
     writer: AtomicPtr<Output>,
     _style: style::Style,
-    _fg_color: color::Color,
-    _bg_color: color::Color,
+    _fg_color: formatting::Color,
+    _bg_color: formatting::Color,
 }
 
 impl Clone for TXTConsole {
@@ -34,8 +34,8 @@ impl Clone for TXTConsole {
         Self {
             writer: AtomicPtr::new(self.writer.load(Ordering::Acquire)),
             _style: style::Style::None,
-            _fg_color: color::Color::Default,
-            _bg_color: color::Color::Black,
+            _fg_color: formatting::Color::Default,
+            _bg_color: formatting::Color::Black,
         }
     }
 }
@@ -50,8 +50,8 @@ impl Default for TXTConsole {
         Self {
             writer: AtomicPtr::new(stdout),
             _style: style::Style::None,
-            _fg_color: color::Color::Default,
-            _bg_color: color::Color::Black,
+            _fg_color: formatting::Color::Default,
+            _bg_color: formatting::Color::Black,
         }
     }
 }
@@ -113,9 +113,9 @@ impl fmt::Write for TXTConsole {
     }
 }
 
-impl color::SetFormatting for TXTConsole {
+impl formatting::SetFormatting for TXTConsole {
     #[inline]
-    fn set_fg_color(&mut self, color: color::Color) {
+    fn set_fg_color(&mut self, color: formatting::Color) {
         self._fg_color = color;
 
         unsafe {
@@ -128,12 +128,12 @@ impl color::SetFormatting for TXTConsole {
     }
 
     #[inline]
-    fn get_fg_color(&self) -> color::Color {
+    fn get_fg_color(&self) -> formatting::Color {
         self._fg_color
     }
 
     #[inline]
-    fn set_bg_color(&mut self, color: color::Color) {
+    fn set_bg_color(&mut self, color: formatting::Color) {
         self._bg_color = color;
 
         unsafe {
@@ -146,7 +146,7 @@ impl color::SetFormatting for TXTConsole {
     }
 
     #[inline]
-    fn get_bg_color(&self) -> color::Color {
+    fn get_bg_color(&self) -> formatting::Color {
         self._bg_color
     }
 }

@@ -16,7 +16,7 @@ use uefi::runtime;
 use crate::{
     display::{
         self,
-        color::{Color, SetFormatting},
+        formatting::{Color, SetFormatting},
         style::{SetStyle, Style},
     },
     log::writer::{LogOutput, NoOutput},

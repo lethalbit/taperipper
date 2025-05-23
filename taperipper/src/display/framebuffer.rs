@@ -21,7 +21,7 @@ use embedded_graphics::{
 use iosevka_embedded::{IOSEVKAFIXED_EXTENDEDBOLD_16, IOSEVKAFIXED_EXTENDEDTHIN_16};
 
 use crate::{
-    display::{color, style},
+    display::{formatting, style},
     uefi_sys,
 };
 
@@ -34,25 +34,25 @@ pub struct Framebuffer {
     cursor_x: usize,
     cursor_y: usize,
     pix_format: PixelFormat,
-    fg_color: color::Color,
-    bg_color: color::Color,
+    fg_color: formatting::Color,
+    bg_color: formatting::Color,
     style: style::Style,
 }
 
-impl color::SetFormatting for Framebuffer {
-    fn set_fg_color(&mut self, color: color::Color) {
+impl formatting::SetFormatting for Framebuffer {
+    fn set_fg_color(&mut self, color: formatting::Color) {
         self.fg_color = color;
     }
 
-    fn get_fg_color(&self) -> color::Color {
+    fn get_fg_color(&self) -> formatting::Color {
         self.fg_color
     }
 
-    fn set_bg_color(&mut self, color: color::Color) {
+    fn set_bg_color(&mut self, color: formatting::Color) {
         self.bg_color = color;
     }
 
-    fn get_bg_color(&self) -> color::Color {
+    fn get_bg_color(&self) -> formatting::Color {
         self.bg_color
     }
 }
@@ -77,8 +77,8 @@ impl Default for Framebuffer {
             cursor_x: 0,
             cursor_y: 0,
             pix_format: PixelFormat::Rgb,
-            fg_color: color::Color::Default,
-            bg_color: color::Color::Black,
+            fg_color: formatting::Color::Default,
+            bg_color: formatting::Color::Black,
             style: style::Style::None,
         }
     }
@@ -147,8 +147,8 @@ impl Framebuffer {
             cursor_x: 0,
             cursor_y: 0,
             pix_format: mode.pixel_format(),
-            fg_color: color::Color::Default,
-            bg_color: color::Color::Black,
+            fg_color: formatting::Color::Default,
+            bg_color: formatting::Color::Black,
             style: style::Style::None,
         }
     }

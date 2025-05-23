@@ -12,7 +12,7 @@ use core::{arch::asm, fmt};
 use tracing::Metadata;
 
 use crate::{
-    display::{color, style},
+    display::{formatting, style},
     log::writer,
 };
 
@@ -85,25 +85,25 @@ impl fmt::Write for QEMUDebugcon {
     }
 }
 
-impl color::SetFormatting for QEMUDebugcon {
+impl formatting::SetFormatting for QEMUDebugcon {
     #[inline]
-    fn set_fg_color(&mut self, _color: color::Color) {
+    fn set_fg_color(&mut self, _color: formatting::Color) {
         // NOP
     }
 
     #[inline]
-    fn get_fg_color(&self) -> color::Color {
-        color::Color::Default
+    fn get_fg_color(&self) -> formatting::Color {
+        formatting::Color::Default
     }
 
     #[inline]
-    fn set_bg_color(&mut self, _color: color::Color) {
+    fn set_bg_color(&mut self, _color: formatting::Color) {
         // NOP
     }
 
     #[inline]
-    fn get_bg_color(&self) -> color::Color {
-        color::Color::Default
+    fn get_bg_color(&self) -> formatting::Color {
+        formatting::Color::Default
     }
 }
 
