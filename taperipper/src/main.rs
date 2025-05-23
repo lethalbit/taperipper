@@ -114,10 +114,10 @@ fn main() {
         }
     }
 
-    debug!("UEFI Version {}", system::uefi_revision());
-    debug!("Firmware Vendor  {}", system::firmware_vendor());
-    debug!("Firmware Version {}", system::firmware_revision());
-    debug!("ACPI Address:   {:#018x}", ext_tables.acpi as usize);
+    debug!("UEFI Version: {}", system::uefi_revision());
+    debug!("Firmware Vendor: {}", system::firmware_vendor());
+    debug!("Firmware Version: {}", system::firmware_revision());
+    debug!("ACPI Address: {:#018x}", ext_tables.acpi as usize);
     debug!("SMBIOS Address: {:#018x}", ext_tables.smbios as usize);
 
     if fb.read().unwrap().is_valid() {
@@ -130,7 +130,7 @@ fn main() {
             "Framebuffer Resolution: {}x{}",
             fb_size_pixels.0, fb_size_pixels.1
         );
-        debug!("Console Size:  {}x{}", fb_size_chars.0, fb_size_chars.1);
+        debug!("Console Size: {}x{}", fb_size_chars.0, fb_size_chars.1);
     }
 
     info!("Taperipper v{}", env!("CARGO_PKG_VERSION"));
