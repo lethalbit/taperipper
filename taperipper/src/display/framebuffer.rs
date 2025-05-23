@@ -85,9 +85,10 @@ unsafe impl Send for Framebuffer {}
 unsafe impl Sync for Framebuffer {}
 
 impl Framebuffer {
+    // WSXGA+ 1680x1050
     // NOTE(aki): For now we have a fixed max size, we should probably have some way to configure it?
-    pub const MAX_WIDTH: usize = 1680;
-    pub const MAX_HEIGHT: usize = 1050;
+    pub const MAX_WIDTH: usize = 1920;
+    pub const MAX_HEIGHT: usize = 1080;
 
     // TODO(aki): Eventually pass this in on FB construction so we can set it via a UEFI var
     pub const FONT: &font::FramebufferFont<'static> = &font::IOSEVKAFIXED_16;
