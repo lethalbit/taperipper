@@ -11,10 +11,7 @@
 use core::{arch::asm, fmt};
 use tracing::Metadata;
 
-use crate::{
-    display::{formatting, style},
-    log::writer,
-};
+use crate::{display::formatting, log::writer};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct QEMUDebugcon {}
@@ -105,16 +102,14 @@ impl formatting::SetFormatting for QEMUDebugcon {
     fn get_bg_color(&self) -> formatting::Color {
         formatting::Color::Default
     }
-}
 
-impl style::SetStyle for QEMUDebugcon {
     #[inline]
-    fn set_style(&mut self, _style: style::Style) {
+    fn set_style(&mut self, _style: formatting::Style) {
         // NOP
     }
 
     #[inline]
-    fn get_style(&self) -> style::Style {
-        style::Style::None
+    fn get_style(&self) -> formatting::Style {
+        formatting::Style::None
     }
 }

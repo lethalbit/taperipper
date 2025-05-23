@@ -8,7 +8,8 @@
 use core::fmt;
 use tracing_core::{Level, Metadata};
 
-use crate::display::{color, style};
+use crate::display::formatting;
+
 pub trait LogOutput<'a> {
     type Writer: fmt::Write;
 
@@ -88,42 +89,40 @@ impl<'a> LogOutput<'a> for NoOutput {
     }
 }
 
-impl color::SetFormatting for NoOutput {
+impl formatting::SetFormatting for NoOutput {
     #[inline]
-    fn set_fg_color(&mut self, _: color::Color) {
+    fn set_fg_color(&mut self, _: formatting::Color) {
         // NOP
     }
 
     #[inline]
-    fn get_fg_color(&self) -> color::Color {
-        color::Color::Default
+    fn get_fg_color(&self) -> formatting::Color {
+        formatting::Color::Default
     }
 
     #[inline]
-    fn set_bg_color(&mut self, _: color::Color) {
+    fn set_bg_color(&mut self, _: formatting::Color) {
         // NOP
     }
 
     #[inline]
-    fn get_bg_color(&self) -> color::Color {
-        color::Color::Default
+    fn get_bg_color(&self) -> formatting::Color {
+        formatting::Color::Default
     }
 
     #[inline]
-    fn set_colors(&mut self, _: color::Color, _: color::Color) {
-        // NOP
-    }
-}
-
-impl style::SetStyle for NoOutput {
-    #[inline]
-    fn set_style(&mut self, _: style::Style) {
+    fn set_colors(&mut self, _: formatting::Color, _: formatting::Color) {
         // NOP
     }
 
     #[inline]
-    fn get_style(&self) -> style::Style {
-        style::Style::None
+    fn set_style(&mut self, _: formatting::Style) {
+        // NOP
+    }
+
+    #[inline]
+    fn get_style(&self) -> formatting::Style {
+        formatting::Style::None
     }
 }
 
@@ -163,13 +162,13 @@ where
     }
 }
 
-impl<A, B> color::SetFormatting for EitherWriter<A, B>
+impl<A, B> formatting::SetFormatting for EitherWriter<A, B>
 where
-    A: fmt::Write + color::SetFormatting,
-    B: fmt::Write + color::SetFormatting,
+    A: fmt::Write + formatting::SetFormatting,
+    B: fmt::Write + formatting::SetFormatting,
 {
     #[inline]
-    fn set_fg_color(&mut self, color: color::Color) {
+    fn set_fg_color(&mut self, color: formatting::Color) {
         match self {
             EitherWriter::A(a) => a.set_fg_color(color),
             EitherWriter::B(b) => b.set_fg_color(color),
@@ -177,7 +176,7 @@ where
     }
 
     #[inline]
-    fn get_fg_color(&self) -> color::Color {
+    fn get_fg_color(&self) -> formatting::Color {
         match self {
             EitherWriter::A(a) => a.get_fg_color(),
             EitherWriter::B(b) => b.get_fg_color(),
@@ -185,7 +184,7 @@ where
     }
 
     #[inline]
-    fn set_bg_color(&mut self, color: color::Color) {
+    fn set_bg_color(&mut self, color: formatting::Color) {
         match self {
             EitherWriter::A(a) => a.set_bg_color(color),
             EitherWriter::B(b) => b.set_bg_color(color),
@@ -193,7 +192,7 @@ where
     }
 
     #[inline]
-    fn get_bg_color(&self) -> color::Color {
+    fn get_bg_color(&self) -> formatting::Color {
         match self {
             EitherWriter::A(a) => a.get_bg_color(),
             EitherWriter::B(b) => b.get_bg_color(),
@@ -201,21 +200,15 @@ where
     }
 
     #[inline]
-    fn set_colors(&mut self, fg_color: color::Color, bg_color: color::Color) {
+    fn set_colors(&mut self, fg_color: formatting::Color, bg_color: formatting::Color) {
         match self {
             EitherWriter::A(a) => a.set_colors(fg_color, bg_color),
             EitherWriter::B(b) => b.set_colors(fg_color, bg_color),
         }
     }
-}
 
-impl<A, B> style::SetStyle for EitherWriter<A, B>
-where
-    A: fmt::Write + style::SetStyle,
-    B: fmt::Write + style::SetStyle,
-{
     #[inline]
-    fn set_style(&mut self, style: style::Style) {
+    fn set_style(&mut self, style: formatting::Style) {
         match self {
             EitherWriter::A(a) => a.set_style(style),
             EitherWriter::B(b) => b.set_style(style),
@@ -223,7 +216,7 @@ where
     }
 
     #[inline]
-    fn get_style(&self) -> style::Style {
+    fn get_style(&self) -> formatting::Style {
         match self {
             EitherWriter::A(a) => a.get_style(),
             EitherWriter::B(b) => b.get_style(),

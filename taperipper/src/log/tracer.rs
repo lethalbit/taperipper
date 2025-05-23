@@ -16,8 +16,7 @@ use uefi::runtime;
 use crate::{
     display::{
         self,
-        formatting::{Color, SetFormatting},
-        style::{SetStyle, Style},
+        formatting::{Color, SetFormatting, Style},
     },
     log::writer::{LogOutput, NoOutput},
 };
@@ -68,7 +67,7 @@ pub struct ConsoleSubscriber<P, S = Option<NoOutput>> {
 impl<P> Default for ConsoleSubscriber<P>
 where
     for<'a> P: LogOutput<'a> + 'static,
-    for<'a> <P as LogOutput<'a>>::Writer: SetFormatting + SetStyle,
+    for<'a> <P as LogOutput<'a>>::Writer: SetFormatting,
     P: Default,
 {
     fn default() -> Self {
@@ -79,10 +78,10 @@ where
 impl<P, S> ConsoleSubscriber<P, S>
 where
     for<'a> P: LogOutput<'a> + 'static,
-    for<'a> <P as LogOutput<'a>>::Writer: SetFormatting + SetStyle,
+    for<'a> <P as LogOutput<'a>>::Writer: SetFormatting,
     P: Default,
     for<'a> S: LogOutput<'a> + 'static,
-    for<'a> <S as LogOutput<'a>>::Writer: SetFormatting + SetStyle,
+    for<'a> <S as LogOutput<'a>>::Writer: SetFormatting,
     S: Default,
 {
     pub fn new() -> Self {
@@ -136,9 +135,9 @@ impl<P, S> ConsoleSubscriber<P, S> {
 impl<P, S> Subscriber for ConsoleSubscriber<P, S>
 where
     for<'a> P: LogOutput<'a> + 'static,
-    for<'a> <P as LogOutput<'a>>::Writer: SetFormatting + SetStyle,
+    for<'a> <P as LogOutput<'a>>::Writer: SetFormatting,
     for<'a> S: LogOutput<'a> + 'static,
-    for<'a> <S as LogOutput<'a>>::Writer: SetFormatting + SetStyle,
+    for<'a> <S as LogOutput<'a>>::Writer: SetFormatting,
 {
     fn enabled(&self, metadata: &Metadata<'_>) -> bool {
         self.pri_con.enabled(metadata) || self.sec_con.enabled(metadata)
@@ -338,13 +337,7 @@ where
             secondary.set_colors(fg_color, bg_color);
         }
     }
-}
 
-impl<P, S> SetStyle for WriterPair<'_, P, S>
-where
-    P: fmt::Write + SetStyle,
-    S: fmt::Write + SetStyle,
-{
     fn set_style(&mut self, style: Style) {
         if let Some(ref mut primary) = self.primary {
             primary.set_style(style);
@@ -358,8 +351,8 @@ where
     fn get_style(&self) -> Style {
         self.primary
             .as_ref()
-            .map(SetStyle::get_style)
-            .or_else(|| self.secondary.as_ref().map(SetStyle::get_style))
+            .map(SetFormatting::get_style)
+            .or_else(|| self.secondary.as_ref().map(SetFormatting::get_style))
             .unwrap_or(Style::None)
     }
 }
@@ -563,12 +556,7 @@ where
     fn set_colors(&mut self, fg_color: Color, bg_color: Color) {
         self.writer.set_colors(fg_color, bg_color);
     }
-}
 
-impl<W> SetStyle for Writer<'_, W>
-where
-    W: fmt::Write + SetStyle,
-{
     fn set_style(&mut self, style: Style) {
         self.writer.set_style(style);
     }
@@ -581,7 +569,7 @@ where
 impl<'writer, W> Visitor<'writer, W>
 where
     W: fmt::Write,
-    &'writer mut W: SetFormatting + SetStyle,
+    &'writer mut W: SetFormatting,
 {
     fn new(writer: &'writer mut W, altmode: bool) -> Self {
         Self {
@@ -639,12 +627,7 @@ where
             fn set_colors(&mut self, fg_color: Color, bg_color: Color) {
                 self.writer.set_colors(fg_color, bg_color);
             }
-        }
 
-        impl<W: fmt::Write> SetStyle for HasWrittenNewline<'_, W>
-        where
-            W: SetStyle,
-        {
             #[inline]
             fn set_style(&mut self, style: Style) {
                 self.writer.set_style(style);
@@ -707,7 +690,7 @@ where
 impl<'writer, W> field::Visit for Visitor<'writer, W>
 where
     W: fmt::Write,
-    &'writer mut W: SetFormatting + SetStyle,
+    &'writer mut W: SetFormatting,
 {
     #[inline]
     fn record_bool(&mut self, field: &field::Field, value: bool) {

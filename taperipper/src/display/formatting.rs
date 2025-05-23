@@ -49,6 +49,16 @@ pub const THEME_ROSE_PINE_MOON: &[(u8, u8, u8)] = &[
     (224, 222, 244), // #e0def4 | Color::BrightWhite
 ];
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[allow(dead_code)]
+pub enum Style {
+    Default,
+    None,
+    Bold,
+    Underline,
+    Inverted,
+}
+
 pub trait SetFormatting {
     fn set_fg_color(&mut self, color: Color);
     fn get_fg_color(&self) -> Color;
@@ -61,6 +71,9 @@ pub trait SetFormatting {
         self.set_bg_color(bg_color);
     }
 
+    fn set_style(&mut self, style: Style);
+    fn get_style(&self) -> Style;
+
     fn with_fg_color(&mut self, color: Color) -> WithFormatting<'_, Self>
     where
         Self: fmt::Write + Sized,
@@ -72,6 +85,7 @@ pub trait SetFormatting {
             writer: self,
             prev_fg_color: Some(prev_fg),
             prev_bg_color: None,
+            prev_style: None,
         }
     }
 
@@ -86,6 +100,7 @@ pub trait SetFormatting {
             writer: self,
             prev_fg_color: None,
             prev_bg_color: Some(prev_bg),
+            prev_style: None,
         }
     }
 
@@ -101,6 +116,52 @@ pub trait SetFormatting {
             writer: self,
             prev_fg_color: Some(prev_fg),
             prev_bg_color: Some(prev_bg),
+            prev_style: None,
+        }
+    }
+
+    fn with_bold(&mut self) -> WithFormatting<'_, Self>
+    where
+        Self: fmt::Write + Sized,
+    {
+        let prev = self.get_style();
+        self.set_style(Style::Bold);
+
+        WithFormatting {
+            writer: self,
+            prev_fg_color: None,
+            prev_bg_color: None,
+            prev_style: Some(prev),
+        }
+    }
+
+    fn with_underline(&mut self) -> WithFormatting<'_, Self>
+    where
+        Self: fmt::Write + Sized,
+    {
+        let prev = self.get_style();
+        self.set_style(Style::Underline);
+
+        WithFormatting {
+            writer: self,
+            prev_fg_color: None,
+            prev_bg_color: None,
+            prev_style: Some(prev),
+        }
+    }
+
+    fn with_inverted(&mut self) -> WithFormatting<'_, Self>
+    where
+        Self: fmt::Write + Sized,
+    {
+        let prev = self.get_style();
+        self.set_style(Style::Inverted);
+
+        WithFormatting {
+            writer: self,
+            prev_fg_color: None,
+            prev_bg_color: None,
+            prev_style: Some(prev),
         }
     }
 }
@@ -130,6 +191,16 @@ impl<W: SetFormatting> SetFormatting for &'_ mut W {
     fn set_colors(&mut self, fg_color: Color, bg_color: Color) {
         W::set_colors(self, fg_color, bg_color);
     }
+
+    #[inline]
+    fn set_style(&mut self, style: Style) {
+        W::set_style(self, style);
+    }
+
+    #[inline]
+    fn get_style(&self) -> Style {
+        W::get_style(self)
+    }
 }
 
 pub struct WithFormatting<'w, W>
@@ -139,6 +210,7 @@ where
     writer: &'w mut W,
     prev_fg_color: Option<Color>,
     prev_bg_color: Option<Color>,
+    prev_style: Option<Style>,
 }
 
 impl<W> fmt::Write for WithFormatting<'_, W>
@@ -167,6 +239,10 @@ where
 
         if let Some(bg_color) = self.prev_bg_color {
             self.writer.set_bg_color(bg_color);
+        }
+
+        if let Some(style) = self.prev_style {
+            self.writer.set_style(style);
         }
     }
 }

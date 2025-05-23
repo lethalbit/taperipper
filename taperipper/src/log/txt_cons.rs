@@ -15,16 +15,12 @@ use core::{
 use tracing::Metadata;
 use uefi::{proto::console::text::Output, table};
 
-use crate::{
-    display::{formatting, style},
-    log::writer,
-    uefi_sys,
-};
+use crate::{display::formatting, log::writer, uefi_sys};
 
 // TODO(aki): Should probably replace AtomicPtr<> with an Arc<Mutex<>>...
 pub struct TXTConsole {
     writer: AtomicPtr<Output>,
-    _style: style::Style,
+    _style: formatting::Style,
     _fg_color: formatting::Color,
     _bg_color: formatting::Color,
 }
@@ -33,7 +29,7 @@ impl Clone for TXTConsole {
     fn clone(&self) -> Self {
         Self {
             writer: AtomicPtr::new(self.writer.load(Ordering::Acquire)),
-            _style: style::Style::None,
+            _style: formatting::Style::None,
             _fg_color: formatting::Color::Default,
             _bg_color: formatting::Color::Black,
         }
@@ -49,7 +45,7 @@ impl Default for TXTConsole {
 
         Self {
             writer: AtomicPtr::new(stdout),
-            _style: style::Style::None,
+            _style: formatting::Style::None,
             _fg_color: formatting::Color::Default,
             _bg_color: formatting::Color::Black,
         }
@@ -149,16 +145,14 @@ impl formatting::SetFormatting for TXTConsole {
     fn get_bg_color(&self) -> formatting::Color {
         self._bg_color
     }
-}
 
-impl style::SetStyle for TXTConsole {
     #[inline]
-    fn set_style(&mut self, _style: style::Style) {
+    fn set_style(&mut self, _style: formatting::Style) {
         // NOP
     }
 
     #[inline]
-    fn get_style(&self) -> style::Style {
-        style::Style::None
+    fn get_style(&self) -> formatting::Style {
+        formatting::Style::None
     }
 }

@@ -7,7 +7,7 @@ use tracing::Metadata;
 use uefi::{boot::ScopedProtocol, proto::console::gop::GraphicsOutput};
 
 use crate::{
-    display::{formatting, framebuffer::Framebuffer, style},
+    display::{formatting, framebuffer::Framebuffer},
     log::writer,
 };
 
@@ -89,16 +89,14 @@ impl formatting::SetFormatting for GOPConsole {
     fn get_bg_color(&self) -> formatting::Color {
         self.framebuffer.read().unwrap().get_bg_color()
     }
-}
 
-impl style::SetStyle for GOPConsole {
     #[inline]
-    fn set_style(&mut self, style: style::Style) {
+    fn set_style(&mut self, style: formatting::Style) {
         self.framebuffer.write().unwrap().set_style(style);
     }
 
     #[inline]
-    fn get_style(&self) -> style::Style {
+    fn get_style(&self) -> formatting::Style {
         self.framebuffer.read().unwrap().get_style()
     }
 }

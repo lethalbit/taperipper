@@ -20,10 +20,7 @@ use embedded_graphics::{
 
 use iosevka_embedded::{IOSEVKAFIXED_EXTENDEDBOLD_16, IOSEVKAFIXED_EXTENDEDTHIN_16};
 
-use crate::{
-    display::{formatting, style},
-    uefi_sys,
-};
+use crate::{display::formatting, uefi_sys};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Framebuffer {
@@ -36,7 +33,7 @@ pub struct Framebuffer {
     pix_format: PixelFormat,
     fg_color: formatting::Color,
     bg_color: formatting::Color,
-    style: style::Style,
+    style: formatting::Style,
 }
 
 impl formatting::SetFormatting for Framebuffer {
@@ -55,14 +52,12 @@ impl formatting::SetFormatting for Framebuffer {
     fn get_bg_color(&self) -> formatting::Color {
         self.bg_color
     }
-}
 
-impl style::SetStyle for Framebuffer {
-    fn get_style(&self) -> style::Style {
+    fn get_style(&self) -> formatting::Style {
         self.style
     }
 
-    fn set_style(&mut self, style: style::Style) {
+    fn set_style(&mut self, style: formatting::Style) {
         self.style = style
     }
 }
@@ -79,7 +74,7 @@ impl Default for Framebuffer {
             pix_format: PixelFormat::Rgb,
             fg_color: formatting::Color::Default,
             bg_color: formatting::Color::Black,
-            style: style::Style::None,
+            style: formatting::Style::None,
         }
     }
 }
@@ -149,7 +144,7 @@ impl Framebuffer {
             pix_format: mode.pixel_format(),
             fg_color: formatting::Color::Default,
             bg_color: formatting::Color::Black,
-            style: style::Style::None,
+            style: formatting::Style::None,
         }
     }
 
@@ -274,7 +269,7 @@ impl fmt::Write for Framebuffer {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         let text_style: BdfTextStyle<'_, Rgb888> = BdfTextStyle::new(
             match self.style {
-                style::Style::Bold => &IOSEVKAFIXED_EXTENDEDBOLD_16,
+                formatting::Style::Bold => &IOSEVKAFIXED_EXTENDEDBOLD_16,
                 _ => &IOSEVKAFIXED_EXTENDEDTHIN_16,
             },
             self.fg_color.into(),
