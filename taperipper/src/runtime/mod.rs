@@ -7,6 +7,7 @@ use maitake::{
 
 use uefi::boot;
 
+pub mod panic;
 pub mod smp;
 pub mod time;
 

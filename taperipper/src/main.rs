@@ -7,7 +7,6 @@
     duration_constructors_lite
 )]
 
-use core::arch::asm;
 use maitake::time;
 use std::{
     panic,
@@ -25,7 +24,7 @@ mod runtime;
 mod uefi_sys;
 
 #[cfg(feature = "stack-unwinding")]
-use crate::debug::{info, trace};
+use crate::debug::info;
 use crate::{
     display::framebuffer::Framebuffer,
     log::{ConsoleSubscriber, GOPConsole, QEMUDebugcon, TXTConsole, writer},
@@ -75,8 +74,10 @@ fn setup_logging(fb: &Arc<RwLock<Framebuffer>>, level: tracing::Level) {
 fn main() {
     // Setup the UEFI crate
     crate::uefi_sys::init_uefi();
-    // Hook the defaualt std panic handler
-    panic::set_hook(Box::new(|pi| panic(pi)));
+    // Set up the pre-system initialization hook
+    panic::set_hook(Box::new(|panic_info| {
+        runtime::panic::pre_init_panic(panic_info)
+    }));
 
     let ext_tables = system::with_config_table(uefi_sys::ExtraTables::new);
 
@@ -97,6 +98,12 @@ fn main() {
     };
 
     setup_logging(&fb, log_level);
+
+    // Now that we have logging and such, we can set the "post init" panic handler
+    trace!("Setting post-init panic handler...");
+    panic::set_hook(Box::new(|panic_info| {
+        runtime::panic::post_init_panic(panic_info)
+    }));
 
     if cfg!(feature = "stack-unwinding") {
         if let Err(err) = info::load_unwind_table() {
@@ -148,31 +155,4 @@ fn main() {
     runtime::run_scheduler();
 
     crate::uefi_sys::shutdown_now();
-}
-
-pub fn panic(info: &panic::PanicHookInfo<'_>) -> ! {
-    // BUG(aki): There may be a case where we panic *before* logging is set up!
-
-    error!("SYSTEM PANIC");
-    let panic_log = info.location().unwrap();
-    let panic_msg = info.payload_as_str().unwrap_or("<No Message>");
-
-    error!("{}: {}", panic_log, panic_msg);
-
-    if cfg!(feature = "stack-unwinding") {
-        if info::has_unwind_table() {
-            // Capture a stack trace from here
-            let bt = trace::Trace::new();
-        } else {
-            error!("No unwind table present, unable to unwind stack!");
-        }
-    } else {
-        error!("Stack unwinding not available!");
-    }
-
-    loop {
-        unsafe {
-            asm!("hlt", options(nomem, nostack));
-        }
-    }
 }
