@@ -85,7 +85,7 @@ impl fmt::Write for QEMUDebugcon {
     }
 }
 
-impl color::SetFgColor for QEMUDebugcon {
+impl color::SetFormatting for QEMUDebugcon {
     #[inline]
     fn set_fg_color(&mut self, _color: color::Color) {
         // NOP
@@ -95,9 +95,7 @@ impl color::SetFgColor for QEMUDebugcon {
     fn get_fg_color(&self) -> color::Color {
         color::Color::Default
     }
-}
 
-impl color::SetBgColor for QEMUDebugcon {
     #[inline]
     fn set_bg_color(&mut self, _color: color::Color) {
         // NOP
@@ -108,8 +106,6 @@ impl color::SetBgColor for QEMUDebugcon {
         color::Color::Default
     }
 }
-
-impl color::SetColors for QEMUDebugcon {}
 
 impl style::SetStyle for QEMUDebugcon {
     #[inline]

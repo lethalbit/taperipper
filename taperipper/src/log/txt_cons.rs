@@ -113,7 +113,7 @@ impl fmt::Write for TXTConsole {
     }
 }
 
-impl color::SetFgColor for TXTConsole {
+impl color::SetFormatting for TXTConsole {
     #[inline]
     fn set_fg_color(&mut self, color: color::Color) {
         self._fg_color = color;
@@ -131,9 +131,7 @@ impl color::SetFgColor for TXTConsole {
     fn get_fg_color(&self) -> color::Color {
         self._fg_color
     }
-}
 
-impl color::SetBgColor for TXTConsole {
     #[inline]
     fn set_bg_color(&mut self, color: color::Color) {
         self._bg_color = color;
@@ -152,8 +150,6 @@ impl color::SetBgColor for TXTConsole {
         self._bg_color
     }
 }
-
-impl color::SetColors for TXTConsole {}
 
 impl style::SetStyle for TXTConsole {
     #[inline]

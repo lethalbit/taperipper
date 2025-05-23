@@ -16,7 +16,7 @@ use uefi::runtime;
 use crate::{
     display::{
         self,
-        color::{Color, SetBgColor, SetColors, SetFgColor},
+        color::{Color, SetFormatting},
         style::{SetStyle, Style},
     },
     log::writer::{LogOutput, NoOutput},
@@ -68,7 +68,7 @@ pub struct ConsoleSubscriber<P, S = Option<NoOutput>> {
 impl<P> Default for ConsoleSubscriber<P>
 where
     for<'a> P: LogOutput<'a> + 'static,
-    for<'a> <P as LogOutput<'a>>::Writer: SetFgColor + SetBgColor + SetColors + SetStyle,
+    for<'a> <P as LogOutput<'a>>::Writer: SetFormatting + SetStyle,
     P: Default,
 {
     fn default() -> Self {
@@ -79,10 +79,10 @@ where
 impl<P, S> ConsoleSubscriber<P, S>
 where
     for<'a> P: LogOutput<'a> + 'static,
-    for<'a> <P as LogOutput<'a>>::Writer: SetFgColor + SetBgColor + SetColors + SetStyle,
+    for<'a> <P as LogOutput<'a>>::Writer: SetFormatting + SetStyle,
     P: Default,
     for<'a> S: LogOutput<'a> + 'static,
-    for<'a> <S as LogOutput<'a>>::Writer: SetFgColor + SetBgColor + SetColors + SetStyle,
+    for<'a> <S as LogOutput<'a>>::Writer: SetFormatting + SetStyle,
     S: Default,
 {
     pub fn new() -> Self {
@@ -136,9 +136,9 @@ impl<P, S> ConsoleSubscriber<P, S> {
 impl<P, S> Subscriber for ConsoleSubscriber<P, S>
 where
     for<'a> P: LogOutput<'a> + 'static,
-    for<'a> <P as LogOutput<'a>>::Writer: SetFgColor + SetBgColor + SetColors + SetStyle,
+    for<'a> <P as LogOutput<'a>>::Writer: SetFormatting + SetStyle,
     for<'a> S: LogOutput<'a> + 'static,
-    for<'a> <S as LogOutput<'a>>::Writer: SetFgColor + SetBgColor + SetColors + SetStyle,
+    for<'a> <S as LogOutput<'a>>::Writer: SetFormatting + SetStyle,
 {
     fn enabled(&self, metadata: &Metadata<'_>) -> bool {
         self.pri_con.enabled(metadata) || self.sec_con.enabled(metadata)
@@ -211,7 +211,7 @@ where
 #[inline]
 fn write_level<W>(w: &mut W, level: &Level) -> fmt::Result
 where
-    W: fmt::Write + SetFgColor,
+    W: fmt::Write + SetFormatting,
 {
     match *level {
         Level::TRACE => w.with_fg_color(Color::Cyan).write_str("TRACE"),
@@ -225,7 +225,7 @@ where
 #[inline]
 fn write_timestamp<W>(w: &mut W) -> fmt::Result
 where
-    W: fmt::Write + SetFgColor,
+    W: fmt::Write + SetFormatting,
 {
     if let Ok(ts) = runtime::get_time() {
         write!(
@@ -288,10 +288,10 @@ impl<W, const EN_BIT: u64> Output<W, EN_BIT> {
     }
 }
 
-impl<P, S> SetFgColor for WriterPair<'_, P, S>
+impl<P, S> SetFormatting for WriterPair<'_, P, S>
 where
-    P: fmt::Write + SetFgColor,
-    S: fmt::Write + SetFgColor,
+    P: fmt::Write + SetFormatting,
+    S: fmt::Write + SetFormatting,
 {
     fn set_fg_color(&mut self, color: Color) {
         if let Some(ref mut primary) = self.primary {
@@ -306,17 +306,11 @@ where
     fn get_fg_color(&self) -> Color {
         self.primary
             .as_ref()
-            .map(SetFgColor::get_fg_color)
-            .or_else(|| self.secondary.as_ref().map(SetFgColor::get_fg_color))
+            .map(SetFormatting::get_fg_color)
+            .or_else(|| self.secondary.as_ref().map(SetFormatting::get_fg_color))
             .unwrap_or(Color::Default)
     }
-}
 
-impl<P, S> SetBgColor for WriterPair<'_, P, S>
-where
-    P: fmt::Write + SetBgColor,
-    S: fmt::Write + SetBgColor,
-{
     fn set_bg_color(&mut self, color: Color) {
         if let Some(ref mut primary) = self.primary {
             primary.set_bg_color(color);
@@ -330,17 +324,11 @@ where
     fn get_bg_color(&self) -> Color {
         self.primary
             .as_ref()
-            .map(SetBgColor::get_bg_color)
-            .or_else(|| self.secondary.as_ref().map(SetBgColor::get_bg_color))
+            .map(SetFormatting::get_bg_color)
+            .or_else(|| self.secondary.as_ref().map(SetFormatting::get_bg_color))
             .unwrap_or(Color::Default)
     }
-}
 
-impl<P, S> SetColors for WriterPair<'_, P, S>
-where
-    P: fmt::Write + SetColors,
-    S: fmt::Write + SetColors,
-{
     fn set_colors(&mut self, fg_color: Color, bg_color: Color) {
         if let Some(ref mut primary) = self.primary {
             primary.set_colors(fg_color, bg_color);
@@ -552,9 +540,9 @@ impl<W: fmt::Write> Drop for Writer<'_, W> {
     }
 }
 
-impl<W> SetFgColor for Writer<'_, W>
+impl<W> SetFormatting for Writer<'_, W>
 where
-    W: fmt::Write + SetFgColor,
+    W: fmt::Write + SetFormatting,
 {
     fn set_fg_color(&mut self, color: Color) {
         self.writer.set_fg_color(color);
@@ -563,12 +551,7 @@ where
     fn get_fg_color(&self) -> Color {
         self.writer.get_fg_color()
     }
-}
 
-impl<W> SetBgColor for Writer<'_, W>
-where
-    W: fmt::Write + SetBgColor,
-{
     fn set_bg_color(&mut self, color: Color) {
         self.writer.set_bg_color(color);
     }
@@ -576,12 +559,7 @@ where
     fn get_bg_color(&self) -> Color {
         self.writer.get_bg_color()
     }
-}
 
-impl<W> SetColors for Writer<'_, W>
-where
-    W: fmt::Write + SetColors,
-{
     fn set_colors(&mut self, fg_color: Color, bg_color: Color) {
         self.writer.set_colors(fg_color, bg_color);
     }
@@ -603,7 +581,7 @@ where
 impl<'writer, W> Visitor<'writer, W>
 where
     W: fmt::Write,
-    &'writer mut W: SetFgColor + SetBgColor + SetColors + SetStyle,
+    &'writer mut W: SetFormatting + SetStyle,
 {
     fn new(writer: &'writer mut W, altmode: bool) -> Self {
         Self {
@@ -633,9 +611,9 @@ where
             }
         }
 
-        impl<W: fmt::Write> SetFgColor for HasWrittenNewline<'_, W>
+        impl<W: fmt::Write> SetFormatting for HasWrittenNewline<'_, W>
         where
-            W: SetFgColor,
+            W: SetFormatting,
         {
             #[inline]
             fn set_fg_color(&mut self, color: Color) {
@@ -646,12 +624,7 @@ where
             fn get_fg_color(&self) -> Color {
                 self.writer.get_fg_color()
             }
-        }
 
-        impl<W: fmt::Write> SetBgColor for HasWrittenNewline<'_, W>
-        where
-            W: SetBgColor,
-        {
             #[inline]
             fn set_bg_color(&mut self, color: Color) {
                 self.writer.set_bg_color(color);
@@ -661,12 +634,7 @@ where
             fn get_bg_color(&self) -> Color {
                 self.writer.get_bg_color()
             }
-        }
 
-        impl<W: fmt::Write> SetColors for HasWrittenNewline<'_, W>
-        where
-            W: SetColors,
-        {
             #[inline]
             fn set_colors(&mut self, fg_color: Color, bg_color: Color) {
                 self.writer.set_colors(fg_color, bg_color);
@@ -739,7 +707,7 @@ where
 impl<'writer, W> field::Visit for Visitor<'writer, W>
 where
     W: fmt::Write,
-    &'writer mut W: SetFgColor + SetBgColor + SetColors + SetStyle,
+    &'writer mut W: SetFormatting + SetStyle,
 {
     #[inline]
     fn record_bool(&mut self, field: &field::Field, value: bool) {

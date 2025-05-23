@@ -69,7 +69,7 @@ impl fmt::Write for GOPConsole {
     }
 }
 
-impl color::SetFgColor for GOPConsole {
+impl color::SetFormatting for GOPConsole {
     #[inline]
     fn set_fg_color(&mut self, color: color::Color) {
         self.framebuffer.write().unwrap().set_fg_color(color);
@@ -79,9 +79,7 @@ impl color::SetFgColor for GOPConsole {
     fn get_fg_color(&self) -> color::Color {
         self.framebuffer.read().unwrap().get_fg_color()
     }
-}
 
-impl color::SetBgColor for GOPConsole {
     #[inline]
     fn set_bg_color(&mut self, color: color::Color) {
         self.framebuffer.write().unwrap().set_bg_color(color);
@@ -92,8 +90,6 @@ impl color::SetBgColor for GOPConsole {
         self.framebuffer.read().unwrap().get_bg_color()
     }
 }
-
-impl color::SetColors for GOPConsole {}
 
 impl style::SetStyle for GOPConsole {
     #[inline]

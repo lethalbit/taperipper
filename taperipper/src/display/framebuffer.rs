@@ -39,7 +39,7 @@ pub struct Framebuffer {
     style: style::Style,
 }
 
-impl color::SetFgColor for Framebuffer {
+impl color::SetFormatting for Framebuffer {
     fn set_fg_color(&mut self, color: color::Color) {
         self.fg_color = color;
     }
@@ -47,9 +47,7 @@ impl color::SetFgColor for Framebuffer {
     fn get_fg_color(&self) -> color::Color {
         self.fg_color
     }
-}
 
-impl color::SetBgColor for Framebuffer {
     fn set_bg_color(&mut self, color: color::Color) {
         self.bg_color = color;
     }
@@ -58,8 +56,6 @@ impl color::SetBgColor for Framebuffer {
         self.bg_color
     }
 }
-
-impl color::SetColors for Framebuffer {}
 
 impl style::SetStyle for Framebuffer {
     fn get_style(&self) -> style::Style {

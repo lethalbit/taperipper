@@ -88,7 +88,7 @@ impl<'a> LogOutput<'a> for NoOutput {
     }
 }
 
-impl color::SetFgColor for NoOutput {
+impl color::SetFormatting for NoOutput {
     #[inline]
     fn set_fg_color(&mut self, _: color::Color) {
         // NOP
@@ -98,9 +98,7 @@ impl color::SetFgColor for NoOutput {
     fn get_fg_color(&self) -> color::Color {
         color::Color::Default
     }
-}
 
-impl color::SetBgColor for NoOutput {
     #[inline]
     fn set_bg_color(&mut self, _: color::Color) {
         // NOP
@@ -110,9 +108,7 @@ impl color::SetBgColor for NoOutput {
     fn get_bg_color(&self) -> color::Color {
         color::Color::Default
     }
-}
 
-impl color::SetColors for NoOutput {
     #[inline]
     fn set_colors(&mut self, _: color::Color, _: color::Color) {
         // NOP
@@ -167,10 +163,10 @@ where
     }
 }
 
-impl<A, B> color::SetFgColor for EitherWriter<A, B>
+impl<A, B> color::SetFormatting for EitherWriter<A, B>
 where
-    A: fmt::Write + color::SetFgColor,
-    B: fmt::Write + color::SetFgColor,
+    A: fmt::Write + color::SetFormatting,
+    B: fmt::Write + color::SetFormatting,
 {
     #[inline]
     fn set_fg_color(&mut self, color: color::Color) {
@@ -187,13 +183,7 @@ where
             EitherWriter::B(b) => b.get_fg_color(),
         }
     }
-}
 
-impl<A, B> color::SetBgColor for EitherWriter<A, B>
-where
-    A: fmt::Write + color::SetBgColor,
-    B: fmt::Write + color::SetBgColor,
-{
     #[inline]
     fn set_bg_color(&mut self, color: color::Color) {
         match self {
@@ -209,13 +199,7 @@ where
             EitherWriter::B(b) => b.get_bg_color(),
         }
     }
-}
 
-impl<A, B> color::SetColors for EitherWriter<A, B>
-where
-    A: fmt::Write + color::SetColors,
-    B: fmt::Write + color::SetColors,
-{
     #[inline]
     fn set_colors(&mut self, fg_color: color::Color, bg_color: color::Color) {
         match self {

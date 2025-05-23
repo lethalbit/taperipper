@@ -49,25 +49,63 @@ pub const THEME_ROSE_PINE_MOON: &[(u8, u8, u8)] = &[
     (224, 222, 244), // #e0def4 | Color::BrightWhite
 ];
 
-pub trait SetFgColor {
+pub trait SetFormatting {
     fn set_fg_color(&mut self, color: Color);
     fn get_fg_color(&self) -> Color;
 
-    fn with_fg_color(&mut self, color: Color) -> WithFgColor<'_, Self>
+    fn set_bg_color(&mut self, color: Color);
+    fn get_bg_color(&self) -> Color;
+
+    fn set_colors(&mut self, fg_color: Color, bg_color: Color) {
+        self.set_fg_color(fg_color);
+        self.set_bg_color(bg_color);
+    }
+
+    fn with_fg_color(&mut self, color: Color) -> WithFormatting<'_, Self>
     where
         Self: fmt::Write + Sized,
     {
         let prev_fg = self.get_fg_color();
         self.set_fg_color(color);
 
-        WithFgColor {
+        WithFormatting {
             writer: self,
-            old_fg_color: prev_fg,
+            prev_fg_color: Some(prev_fg),
+            prev_bg_color: None,
+        }
+    }
+
+    fn with_bg_color(&mut self, color: Color) -> WithFormatting<'_, Self>
+    where
+        Self: fmt::Write + Sized,
+    {
+        let prev_bg = self.get_bg_color();
+        self.set_bg_color(color);
+
+        WithFormatting {
+            writer: self,
+            prev_fg_color: None,
+            prev_bg_color: Some(prev_bg),
+        }
+    }
+
+    fn with_colors(&mut self, fg_color: Color, bg_color: Color) -> WithFormatting<'_, Self>
+    where
+        Self: fmt::Write + Sized,
+    {
+        let prev_fg = self.get_fg_color();
+        let prev_bg = self.get_bg_color();
+        self.set_colors(fg_color, bg_color);
+
+        WithFormatting {
+            writer: self,
+            prev_fg_color: Some(prev_fg),
+            prev_bg_color: Some(prev_bg),
         }
     }
 }
 
-impl<W: SetFgColor> SetFgColor for &'_ mut W {
+impl<W: SetFormatting> SetFormatting for &'_ mut W {
     #[inline]
     fn set_fg_color(&mut self, color: Color) {
         W::set_fg_color(self, color);
@@ -77,27 +115,7 @@ impl<W: SetFgColor> SetFgColor for &'_ mut W {
     fn get_fg_color(&self) -> Color {
         W::get_fg_color(self)
     }
-}
 
-pub trait SetBgColor {
-    fn set_bg_color(&mut self, color: Color);
-    fn get_bg_color(&self) -> Color;
-
-    fn with_bg_color(&mut self, color: Color) -> WithBgColor<'_, Self>
-    where
-        Self: fmt::Write + Sized,
-    {
-        let prev_bg = self.get_bg_color();
-        self.set_bg_color(color);
-
-        WithBgColor {
-            writer: self,
-            old_bg_color: prev_bg,
-        }
-    }
-}
-
-impl<W: SetBgColor> SetBgColor for &'_ mut W {
     #[inline]
     fn set_bg_color(&mut self, color: Color) {
         W::set_bg_color(self, color);
@@ -107,48 +125,25 @@ impl<W: SetBgColor> SetBgColor for &'_ mut W {
     fn get_bg_color(&self) -> Color {
         W::get_bg_color(self)
     }
-}
 
-pub trait SetColors: SetFgColor + SetBgColor {
-    fn set_colors(&mut self, fg_color: Color, bg_color: Color) {
-        self.set_fg_color(fg_color);
-        self.set_bg_color(bg_color);
-    }
-
-    fn with_colors(&mut self, fg_color: Color, bg_color: Color) -> WithColors<'_, Self>
-    where
-        Self: fmt::Write + Sized,
-    {
-        let prev_fg = self.get_fg_color();
-        let prev_bg = self.get_bg_color();
-        self.set_colors(fg_color, bg_color);
-
-        WithColors {
-            writer: self,
-            old_fg_color: prev_fg,
-            old_bg_color: prev_bg,
-        }
-    }
-}
-
-impl<W: SetColors> SetColors for &'_ mut W {
     #[inline]
     fn set_colors(&mut self, fg_color: Color, bg_color: Color) {
         W::set_colors(self, fg_color, bg_color);
     }
 }
 
-pub struct WithFgColor<'w, W>
+pub struct WithFormatting<'w, W>
 where
-    W: fmt::Write + SetFgColor,
+    W: fmt::Write + SetFormatting,
 {
     writer: &'w mut W,
-    old_fg_color: Color,
+    prev_fg_color: Option<Color>,
+    prev_bg_color: Option<Color>,
 }
 
-impl<W> fmt::Write for WithFgColor<'_, W>
+impl<W> fmt::Write for WithFormatting<'_, W>
 where
-    W: fmt::Write + SetFgColor,
+    W: fmt::Write + SetFormatting,
 {
     #[inline]
     fn write_str(&mut self, s: &str) -> std::fmt::Result {
@@ -161,77 +156,18 @@ where
     }
 }
 
-impl<W> Drop for WithFgColor<'_, W>
+impl<W> Drop for WithFormatting<'_, W>
 where
-    W: fmt::Write + SetFgColor,
+    W: fmt::Write + SetFormatting,
 {
     fn drop(&mut self) {
-        self.writer.set_fg_color(self.old_fg_color);
-    }
-}
+        if let Some(fg_color) = self.prev_fg_color {
+            self.writer.set_fg_color(fg_color);
+        }
 
-pub struct WithBgColor<'w, W>
-where
-    W: fmt::Write + SetBgColor,
-{
-    writer: &'w mut W,
-    old_bg_color: Color,
-}
-
-impl<W> fmt::Write for WithBgColor<'_, W>
-where
-    W: fmt::Write + SetBgColor,
-{
-    #[inline]
-    fn write_str(&mut self, s: &str) -> std::fmt::Result {
-        self.writer.write_str(s)
-    }
-
-    #[inline]
-    fn write_char(&mut self, c: char) -> std::fmt::Result {
-        self.writer.write_char(c)
-    }
-}
-
-impl<W> Drop for WithBgColor<'_, W>
-where
-    W: fmt::Write + SetBgColor,
-{
-    fn drop(&mut self) {
-        self.writer.set_bg_color(self.old_bg_color);
-    }
-}
-
-pub struct WithColors<'w, W>
-where
-    W: fmt::Write + SetColors,
-{
-    writer: &'w mut W,
-    old_fg_color: Color,
-    old_bg_color: Color,
-}
-
-impl<W> fmt::Write for WithColors<'_, W>
-where
-    W: fmt::Write + SetColors,
-{
-    #[inline]
-    fn write_str(&mut self, s: &str) -> std::fmt::Result {
-        self.writer.write_str(s)
-    }
-
-    #[inline]
-    fn write_char(&mut self, c: char) -> std::fmt::Result {
-        self.writer.write_char(c)
-    }
-}
-
-impl<W> Drop for WithColors<'_, W>
-where
-    W: fmt::Write + SetColors,
-{
-    fn drop(&mut self) {
-        self.writer.set_colors(self.old_fg_color, self.old_bg_color);
+        if let Some(bg_color) = self.prev_bg_color {
+            self.writer.set_bg_color(bg_color);
+        }
     }
 }
 
