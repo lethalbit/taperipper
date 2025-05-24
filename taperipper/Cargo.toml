@@ -25,7 +25,7 @@ log                = { version = "0.4.27", default-features = false }
 # Embedded-Graphics for fancy
 embedded-graphics = "0.8.1"
 eg-bdf            = { git = "https://github.com/embedded-graphics/bdf", branch = "master" }
-iosevka-embedded  = { path = "../iosevka-embedded" }
+iosevka-embedded  = { path = "../iosevka-embedded", features = ["size_8", "size_16", "size_24", "size_32", "bold", "thin", "italic"] }
 tinypng           = { path = "../tinypng" }
 
 # Debugging/Stack Unwinding
