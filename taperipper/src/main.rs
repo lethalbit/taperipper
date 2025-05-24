@@ -20,6 +20,7 @@ use uefi::system;
 mod debug;
 mod display;
 mod log;
+mod platform;
 mod runtime;
 mod uefi_sys;
 
