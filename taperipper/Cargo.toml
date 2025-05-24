@@ -10,6 +10,11 @@ acpi     = { version = "5.2.0", features = ["allocator_api"] }
 uefi     = { version = "0.34.1", features = ["alloc"] }
 uefi-raw = "0.10.0"
 
+# General Utility
+rand_core       = { version = "0.9.3", default-features = false }
+rand            = { version = "0.9.1", default-features = false }
+rand_xoshiro    = { version = "0.7.0", default-features = false }
+
 # Async runtime bits
 # TODO(aki): Do we want to roll our own, eventually?
 cordyceps    = { git = "https://github.com/hawkw/mycelium", rev = "435f310", package = "cordyceps",    default-features = false, features = ["alloc"] }
