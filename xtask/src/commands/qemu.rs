@@ -73,6 +73,13 @@ pub mod run {
                         .default_value("4")
                         .value_parser(clap::value_parser!(usize))
                         .help("Number of CPU cores to use"),
+                )
+                .arg(
+                    Arg::new("DEBUG")
+                        .short('d')
+                        .long("debug")
+                        .action(ArgAction::SetTrue)
+                        .help(""),
                 ),
         )
     }
@@ -122,21 +129,24 @@ pub mod run {
         efi_vars.write(serde_json::to_string(&cfg)?.as_bytes())?;
         drop(efi_vars);
 
-        if !crate::utils::common_run_qemu(Some(&crate::paths::efi_root()))
-            .current_dir(crate::paths::ovmf_dir())
-            .args(&[
-                "-enable-kvm",
-                "-debugcon",
-                "stdio",
-                "-smp",
-                args.get_one::<usize>("CORES")
-                    .unwrap_or(&2)
-                    .to_string()
-                    .as_str(),
-            ])
-            .status()?
-            .success()
-        {
+        let mut qemu = crate::utils::common_run_qemu(Some(&crate::paths::efi_root()));
+
+        qemu.current_dir(crate::paths::ovmf_dir()).args(&[
+            "-enable-kvm",
+            "-debugcon",
+            "stdio",
+            "-smp",
+            args.get_one::<usize>("CORES")
+                .unwrap_or(&2)
+                .to_string()
+                .as_str(),
+        ]);
+
+        if args.get_flag("DEBUG") {
+            qemu.args(&["-S", "-s"]);
+        }
+
+        if !qemu.status()?.success() {
             Err("QEMU Exited with an error condition!")?;
         }
 
