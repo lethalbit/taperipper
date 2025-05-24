@@ -139,13 +139,17 @@ fn main() {
     runtime::time::init_timer();
 
     runtime::spawn(async {
-        debug!("Hello everynyan!");
-        time::sleep(time::Duration::from_millis(7)).await;
+        loop {
+            time::sleep(time::Duration::from_millis(700)).await;
+            debug!("Hello everynyan!");
+        }
     });
 
     runtime::spawn(async {
-        time::sleep(time::Duration::from_millis(3)).await;
-        debug!("Meow");
+        loop {
+            time::sleep(time::Duration::from_millis(750)).await;
+            debug!("Meow");
+        }
     });
 
     runtime::spawn(async {
