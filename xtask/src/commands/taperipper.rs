@@ -80,7 +80,7 @@ pub mod build {
             .ok_or::<crate::utils::Error>("No .rdata section!".into())?;
 
         // HACK(aki): OVMF seems to *always* load us here, so we just kinda bet on it for debug
-        let load_addr: u64 = 0x00005E7D000;
+        let load_addr: u64 = 0x0003DD72000;
 
         let text_rebase = text.virtual_address as u64 + load_addr;
         debug!(
@@ -113,6 +113,16 @@ pub mod build {
             )
             .as_bytes(),
         )?;
+
+        // NOTE(aki): OVMF always loads us here, and debugging is painful without symbols.
+        gdb_script.write(
+            format!(
+                "add-symbol-file {} -s .text 0x000000003fe36000\n",
+                efi_img.display()
+            )
+            .as_bytes(),
+        )?;
+
         gdb_script.write("tar remote 127.0.0.1:1234\n".as_bytes())?;
 
         Ok(())
