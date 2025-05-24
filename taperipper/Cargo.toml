@@ -6,7 +6,7 @@ license       = "BSD-3-Clause"
 
 [dependencies]
 # UEFI and HW Support
-acpi     = "5.2.0"
+acpi     = { version = "5.2.0", features = ["allocator_api"] }
 uefi     = { version = "0.34.1", features = ["alloc"] }
 uefi-raw = "0.10.0"
 
