@@ -52,11 +52,12 @@ pub const THEME_ROSE_PINE_MOON: &[(u8, u8, u8)] = &[
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[allow(dead_code)]
 pub enum Style {
-    Default,
-    None,
     Bold,
-    Underline,
+    Default,
     Inverted,
+    Italic,
+    None,
+    Underline,
 }
 
 pub trait SetFormatting {
@@ -156,6 +157,21 @@ pub trait SetFormatting {
     {
         let prev = self.get_style();
         self.set_style(Style::Inverted);
+
+        WithFormatting {
+            writer: self,
+            prev_fg_color: None,
+            prev_bg_color: None,
+            prev_style: Some(prev),
+        }
+    }
+
+    fn with_italic(&mut self) -> WithFormatting<'_, Self>
+    where
+        Self: fmt::Write + Sized,
+    {
+        let prev = self.get_style();
+        self.set_style(Style::Italic);
 
         WithFormatting {
             writer: self,
