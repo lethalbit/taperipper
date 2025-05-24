@@ -3,4 +3,5 @@
 pub mod acpi;
 pub mod local;
 pub mod msr;
+pub mod smbios;
 pub mod smp;
