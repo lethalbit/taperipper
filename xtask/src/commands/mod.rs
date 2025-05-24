@@ -48,6 +48,7 @@ pub fn init() -> Vec<Command> {
         qemu::run::init(),
         qemu::shell::init(),
         taperipper::build::init(),
+        taperipper::check::init(),
     ]
 }
 
@@ -59,6 +60,7 @@ pub fn exec(command: &str) -> Option<CmdExec> {
         qemu::run::COMMAND_NAME => Some(qemu::run::exec),
         qemu::shell::COMMAND_NAME => Some(qemu::shell::exec),
         taperipper::build::COMMAND_NAME => Some(taperipper::build::exec),
+        taperipper::check::COMMAND_NAME => Some(taperipper::check::exec),
         _ => None,
     }
 }

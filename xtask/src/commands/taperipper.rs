@@ -1,5 +1,53 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
+pub mod check {
+    use std::{env, process};
+
+    use clap::{ArgMatches, Command};
+
+    use crate::utils;
+
+    pub const COMMAND_NAME: &str = "check";
+
+    pub fn init() -> Command {
+        crate::commands::cmd_common(Command::new(COMMAND_NAME).about("Run clippy on Taperipper"))
+    }
+
+    pub fn exec(args: &ArgMatches) -> utils::Result {
+        let mut cargo = process::Command::new(env::var("CARGO").unwrap_or("cargo".to_string()));
+
+        let tar_type: crate::utils::TargetType = args.into();
+
+        if !cargo
+            .current_dir(crate::paths::project_root())
+            .args(&[
+                "clippy",
+                "--bin",
+                "taperipper",
+                // NOTE(aki): Because cargo can't just figure out to use this we have to specify it manually
+                "--config",
+                crate::paths::project_root()
+                    .join("taperipper")
+                    .join(".cargo")
+                    .join("config.toml")
+                    .to_str()
+                    .unwrap(),
+                "--profile",
+                match tar_type {
+                    crate::utils::TargetType::Release => "release",
+                    crate::utils::TargetType::Debug => "dev",
+                },
+            ])
+            .status()?
+            .success()
+        {
+            Err("Unable to build taperipper")?;
+        }
+
+        Ok(())
+    }
+}
+
 pub mod build {
     use std::{
         env,
