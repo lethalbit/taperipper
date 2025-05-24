@@ -10,7 +10,7 @@ use maitake::time::{self, Clock, Duration, Timer};
 use tracing::{debug, trace};
 use uefi::boot;
 
-use crate::uefi_sys;
+use crate::platform;
 
 static MAITAKE_TIMER: OnceLock<Timer> = OnceLock::new();
 static RDTSC_SHIFT: AtomicU32 = AtomicU32::new(u32::MAX);
@@ -58,7 +58,7 @@ fn _duration_from_rdtsc() -> Duration {
 }
 
 pub fn new_clock() -> Clock {
-    if let Ok(ts_props) = uefi_sys::get_timestamp_properties() {
+    if let Ok(ts_props) = platform::uefi::get_timestamp_properties() {
         // We have UEFI `Timestamp` protocol support, use that
         trace!("Using UEFI Timestamp protocol for wall clock");
         Clock::new(
@@ -66,7 +66,7 @@ pub fn new_clock() -> Clock {
                 let tick_ns = 1_000_000_000 / ts_props.frequency;
                 Duration::from_nanos(tick_ns)
             },
-            uefi_sys::get_timestamp,
+            platform::uefi::get_timestamp,
         )
     } else {
         // We don't support the UEFI `Timestamp` protocol, fall back to `rdtsc`

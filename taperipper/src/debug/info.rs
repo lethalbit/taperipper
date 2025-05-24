@@ -11,7 +11,7 @@ use goblin::pe::{PE, exception};
 use tracing::debug;
 use uefi::{boot, cstr16, fs};
 
-use crate::uefi_sys;
+use crate::platform;
 #[derive(Clone)]
 pub struct UnwindEntry {
     start: usize,
@@ -162,7 +162,7 @@ pub fn load_unwind_table() -> Result<(), uefi::Error> {
         .map_err(|_| uefi::Error::new(uefi::Status::INVALID_PARAMETER, ()))?;
     let pe_file = PE::parse(&img_data.as_slice()).unwrap();
 
-    let (load_addr, _) = uefi_sys::get_image_info().unwrap();
+    let (load_addr, _) = platform::uefi::get_image_info().unwrap();
 
     RUNTIME_ADDR.get_or_init(|| efi_main as usize - pe_file.entry);
     LOAD_ADDR.get_or_init(|| load_addr);

@@ -15,7 +15,7 @@ use core::{
 use tracing::Metadata;
 use uefi::{proto::console::text::Output, table};
 
-use crate::{display::formatting, log::writer, uefi_sys};
+use crate::{display::formatting, log::writer, platform};
 
 // TODO(aki): Should probably replace AtomicPtr<> with an Arc<Mutex<>>...
 pub struct TXTConsole {
@@ -73,7 +73,7 @@ impl<'a> writer::LogOutput<'a> for TXTConsole {
 
     #[inline]
     fn enabled(&self, _metadata: &Metadata<'_>) -> bool {
-        uefi_sys::has_boot_services() && !self.output().is_null()
+        platform::uefi::has_boot_services() && !self.output().is_null()
     }
 
     #[inline]

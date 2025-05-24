@@ -20,7 +20,7 @@ use embedded_graphics::{
 
 use crate::{
     display::{font, formatting},
-    uefi_sys,
+    platform,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -149,7 +149,7 @@ impl Framebuffer {
     }
 
     pub fn scroll(&mut self, lines: usize) {
-        let mut gop = uefi_sys::get_proto::<GraphicsOutput>().unwrap();
+        let mut gop = platform::uefi::get_proto::<GraphicsOutput>().unwrap();
 
         // Compute the scroll region
         let src = Rectangle {
@@ -203,7 +203,7 @@ impl DrawTarget for Framebuffer {
     fn fill_solid(&mut self, area: &Rectangle, color: Self::Color) -> Result<(), Self::Error> {
         // We can do an accelerated fill, don't let embedded-graphics do it the slow way
 
-        let mut gop = uefi_sys::get_proto::<GraphicsOutput>().unwrap();
+        let mut gop = platform::uefi::get_proto::<GraphicsOutput>().unwrap();
 
         let _ = gop.blt(gop::BltOp::VideoFill {
             color: gop::BltPixel::new(color.r(), color.g(), color.b()),
@@ -223,7 +223,7 @@ impl DrawTarget for Framebuffer {
     fn clear(&mut self, color: Self::Color) -> Result<(), Self::Error> {
         // Same as above, but rather than a sub-region it's a full-screen fill
 
-        let mut gop = uefi_sys::get_proto::<GraphicsOutput>().unwrap();
+        let mut gop = platform::uefi::get_proto::<GraphicsOutput>().unwrap();
 
         let _ = gop.blt(gop::BltOp::VideoFill {
             color: gop::BltPixel::new(color.r(), color.g(), color.b()),

@@ -22,7 +22,6 @@ mod display;
 mod log;
 mod platform;
 mod runtime;
-mod uefi_sys;
 
 #[cfg(feature = "stack-unwinding")]
 use crate::debug::info;
@@ -66,7 +65,7 @@ fn setup_logging(fb: &Arc<RwLock<Framebuffer>>, level: tracing::Level) {
             panic!("Unable to setup global trace handler: {err:?}");
         }
 
-        crate::uefi_sys::set_best_stdout_mode();
+        crate::platform::uefi::set_best_stdout_mode();
 
         warn!("Unable to initialize Graphics Console, falling back to Text");
     }
@@ -74,24 +73,25 @@ fn setup_logging(fb: &Arc<RwLock<Framebuffer>>, level: tracing::Level) {
 
 fn main() {
     // Setup the UEFI crate
-    crate::uefi_sys::init_uefi();
+    crate::platform::uefi::init_uefi();
     // Set up the pre-system initialization hook
     panic::set_hook(Box::new(|panic_info| {
         runtime::panic::pre_init_panic(panic_info)
     }));
 
-    let ext_tables = system::with_config_table(uefi_sys::ExtraTables::new);
+    let ext_tables = system::with_config_table(crate::platform::uefi::ExtraTables::new);
 
     // Initialize a Framebuffer, it *might* be empty if our GOP initialization fails
-    let fb =
-        if let Ok(gop) = uefi_sys::init_graphics(Framebuffer::MAX_WIDTH, Framebuffer::MAX_HEIGHT) {
-            Arc::new(RwLock::new(Framebuffer::from_uefi(gop)))
-        } else {
-            Arc::new(RwLock::new(Framebuffer::default()))
-        };
+    let fb = if let Ok(gop) =
+        crate::platform::uefi::init_graphics(Framebuffer::MAX_WIDTH, Framebuffer::MAX_HEIGHT)
+    {
+        Arc::new(RwLock::new(Framebuffer::from_uefi(gop)))
+    } else {
+        Arc::new(RwLock::new(Framebuffer::default()))
+    };
 
     // Get the Log level from the UEFI vars, or a default level
-    let log_level = if let Some(var) = uefi_sys::get_var("TAPERIPPER_LOG_LEVEL") {
+    let log_level = if let Some(var) = crate::platform::uefi::get_var("TAPERIPPER_LOG_LEVEL") {
         tracing::Level::from_str(str::from_utf8(&var).unwrap_or("Debug"))
             .unwrap_or(DEFAULT_LOG_LEVEL)
     } else {
@@ -159,5 +159,5 @@ fn main() {
 
     runtime::run_scheduler();
 
-    crate::uefi_sys::shutdown_now();
+    crate::platform::uefi::shutdown_now();
 }
