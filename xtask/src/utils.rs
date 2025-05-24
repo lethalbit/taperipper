@@ -135,6 +135,8 @@ pub fn common_run_qemu(efi_root: Option<&PathBuf>) -> process::Command {
             crate::paths::uefi_vars().display()
         )
         .as_str(),
+        "-m",
+        "1G",
     ]);
 
     if let Some(efi_root) = efi_root {
