@@ -3,7 +3,7 @@
 // stack tracing in UEFI.
 // Currently it's amd64 *only* but could be expanded to
 // other ISAs if needed.
-#![allow(dead_code)]
+#![allow(dead_code, unused_imports)]
 
 use core::{arch::asm, ffi::c_void, fmt};
 
@@ -66,7 +66,7 @@ impl Trace {
 
         Self {
             start_addr: ip,
-            frames: frames,
+            frames,
         }
     }
 }

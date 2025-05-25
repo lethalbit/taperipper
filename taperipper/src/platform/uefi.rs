@@ -16,7 +16,6 @@ use uefi::{
             fs::SimpleFileSystem,
         },
         misc::Timestamp,
-        pi::mp::{CpuPhysicalLocation, MpServices, ProcessorInformation},
     },
     runtime::{self, ResetType, VariableVendor},
     system,
@@ -167,7 +166,7 @@ pub fn get_options() -> Result<Option<Vec<String>>, uefi::Error> {
 
     img_opts.shrink_to_fit();
 
-    Ok(if img_opts.len() > 0 {
+    Ok(if !img_opts.is_empty() {
         Some(img_opts)
     } else {
         None
@@ -248,47 +247,15 @@ pub fn read_slice(file_path: &str, from: u64, buff: &mut [u8]) -> Result<usize, 
 }
 
 pub fn get_var(name: &str) -> Option<Box<[u8]>> {
-    let mut buf: Vec<u16> = Vec::new();
-    buf.reserve(name.chars().count() * 4);
+    let mut buf: Vec<u16> = Vec::with_capacity(name.chars().count() * 4);
 
-    let var_name = CStr16::from_str_with_buf(name, buf.as_mut_slice()).ok();
+    let var_name = CStr16::from_str_with_buf(name, buf.as_mut_slice()).ok()?;
 
-    if var_name.is_none() {
-        return None;
-    }
-
-    if let Some(var) =
-        runtime::get_variable_boxed(var_name.unwrap(), &VariableVendor::GLOBAL_VARIABLE).ok()
-    {
+    if let Ok(var) = runtime::get_variable_boxed(var_name, &VariableVendor::GLOBAL_VARIABLE) {
         Some(var.0)
     } else {
         None
     }
-}
-
-pub fn get_cpu_info(cpu: usize) -> Result<ProcessorInformation, uefi::Error> {
-    let mp = get_proto::<MpServices>()?;
-
-    Ok(mp.get_processor_info(cpu)?)
-}
-
-pub fn get_core_count() -> Result<(usize, usize), uefi::Error> {
-    let mp = get_proto::<MpServices>()?;
-    let proc_count = mp.get_number_of_processors()?;
-
-    Ok((proc_count.total, proc_count.enabled))
-}
-
-pub fn get_current_core() -> Result<usize, uefi::Error> {
-    let mp = get_proto::<MpServices>()?;
-
-    Ok(mp.who_am_i()?)
-}
-
-pub fn get_current_core_info() -> Result<ProcessorInformation, uefi::Error> {
-    let mp = get_proto::<MpServices>()?;
-
-    Ok(mp.get_processor_info(mp.who_am_i()?)?)
 }
 
 pub fn get_timestamp_properties() -> Result<TimestampProperties, uefi::Error> {

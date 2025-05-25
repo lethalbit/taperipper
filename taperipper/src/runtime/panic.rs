@@ -3,7 +3,7 @@
 use core::arch::asm;
 use std::panic;
 
-use tracing::{self, debug, error, info, trace, warn};
+use tracing::error;
 
 #[cfg(feature = "stack-unwinding")]
 use crate::debug::{info, trace};
@@ -17,15 +17,15 @@ pub fn pre_init_panic(info: &panic::PanicHookInfo<'_>) -> ! {
     let panic_msg = info.payload_as_str().unwrap_or("<No Message>");
 
     print!("Pre-init panic!\r\n");
-    print!("{}: {}\r\n", panic_log, panic_msg);
+    print!("{panic_log}: {panic_msg}\r\n");
 
     // If we are in debug mode, assume we have access to the QEMU debug serial port
     // Use it to emit a desperate gasp to try to let people know whats going on
     if cfg!(debug_assertions) {
         use core::fmt::Write;
         let mut dbgcon = crate::log::QEMUDebugcon::default();
-        write!(dbgcon, "Pre-init panic!\n");
-        write!(dbgcon, "{}: {}\n", panic_log, panic_msg);
+        let _ = writeln!(dbgcon, "Pre-init panic!");
+        let _ = writeln!(dbgcon, "{panic_log}: {panic_msg}");
     }
 
     loop {
@@ -49,7 +49,8 @@ pub fn post_init_panic(info: &panic::PanicHookInfo<'_>) -> ! {
     if cfg!(feature = "stack-unwinding") {
         if info::has_unwind_table() {
             // Capture a stack trace from here
-            let bt = trace::Trace::new();
+            // TODO(aki): get unwinding working
+            let _bt = trace::Trace::new();
         } else {
             error!("No unwind table present, unable to unwind stack!");
         }

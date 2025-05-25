@@ -165,7 +165,7 @@ impl CoreExecutor {
 
         // If we exhausted our attempts above, try one more time with the runtime injector
         if let Ok(stealer) = RUNTIME.sched_inject.try_steal() {
-            return stealer.spawn_n(&self.sched, Self::MAX_TASKS_TO_STEAL);
+            stealer.spawn_n(&self.sched, Self::MAX_TASKS_TO_STEAL)
         } else {
             0
         }

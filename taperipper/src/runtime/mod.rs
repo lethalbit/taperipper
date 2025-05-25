@@ -6,7 +6,7 @@ use std::{
 };
 
 use maitake::{
-    scheduler::{self, Injector, StaticScheduler, Stealer, TaskStub},
+    scheduler::{Injector, StaticScheduler, Stealer, TaskStub},
     task::JoinHandle,
 };
 
@@ -22,6 +22,7 @@ static CORE_SCHED: local::CoreLocal<Cell<Option<&'static StaticScheduler>>> =
     local::CoreLocal::new(|| Cell::new(None));
 
 static RUNTIME: Runtime = {
+    #[allow(clippy::declare_interior_mutable_const)]
     const UNINITIALIZED_SCHEDS: InitOnce<StaticScheduler> = InitOnce::uninitialized();
     Runtime {
         cores: AtomicUsize::new(0),

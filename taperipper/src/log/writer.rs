@@ -49,10 +49,6 @@ where
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Default)]
 pub struct NoOutput(());
 
-pub const fn none() -> NoOutput {
-    NoOutput(())
-}
-
 impl fmt::Write for NoOutput {
     #[inline]
     fn write_str(&mut self, _: &str) -> fmt::Result {
@@ -264,6 +260,7 @@ pub struct OrElse<P, S> {
 }
 
 impl<P, S> OrElse<P, S> {
+    #[allow(unused)]
     pub fn new<'a>(primary: P, secondary: S) -> Self
     where
         P: LogOutput<'a>,
@@ -349,6 +346,7 @@ pub struct WithMinLevel<L> {
 }
 
 impl<L> WithMinLevel<L> {
+    #[allow(unused)]
     pub fn new(output: L, level: Level) -> Self {
         Self { output, level }
     }
@@ -389,6 +387,7 @@ pub struct WithFilter<L, F> {
 }
 
 impl<L, F> WithFilter<L, F> {
+    #[allow(unused)]
     pub fn new(output: L, filter: F) -> Self
     where
         F: Fn(&Metadata<'_>) -> bool,

@@ -3,6 +3,7 @@
 // to extract the embedded unwinding tables.
 // see: https://learn.microsoft.com/en-us/windows/win32/debug/pe-format#the-pdata-section
 // and: https://learn.microsoft.com/en-us/cpp/build/exception-handling-x64?view=msvc-170
+#![allow(dead_code)]
 
 use core::{ffi::c_void, fmt};
 use std::{collections::BTreeMap, sync::OnceLock};
@@ -54,9 +55,9 @@ impl UnwindEntry {
 
 impl fmt::Display for UnwindEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
+        writeln!(
             f,
-            "{} {:#018x}-{:#018x}\n",
+            "{} {:#018x}-{:#018x}",
             self.name.clone().unwrap_or("<UNNAMED>".to_string()),
             self.start,
             self.end
@@ -94,6 +95,7 @@ impl PartialEq for UnwindEntry {
 }
 
 impl PartialOrd for UnwindEntry {
+    #[allow(clippy::non_canonical_partial_ord_impl)]
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         if self.end <= other.start {
             Some(std::cmp::Ordering::Less)
@@ -134,9 +136,9 @@ pub static RUNTIME_ADDR: OnceLock<usize> = OnceLock::new();
 
 pub fn has_unwind_table() -> bool {
     if let Some(table) = UNWIND_TABLE.get() {
-        return table.len() != 0;
+        !table.is_empty()
     } else {
-        return false;
+        false
     }
 }
 
@@ -160,7 +162,7 @@ pub fn load_unwind_table() -> Result<(), uefi::Error> {
     let img_data = fs
         .read(img_path)
         .map_err(|_| uefi::Error::new(uefi::Status::INVALID_PARAMETER, ()))?;
-    let pe_file = PE::parse(&img_data.as_slice()).unwrap();
+    let pe_file = PE::parse(img_data.as_slice()).unwrap();
 
     let (load_addr, _) = platform::uefi::get_image_info().unwrap();
 
@@ -173,21 +175,20 @@ pub fn load_unwind_table() -> Result<(), uefi::Error> {
     // Extract the `.text` virtual address so we can offset symbols to match unwind entries
     let txt_virt = (pe_file.sections)
         .iter()
-        .filter(|s| s.name().unwrap() == ".text")
-        .nth(0)
+        .find(|s| s.name().unwrap() == ".text")
         .unwrap()
         .virtual_address;
     // Pull out the string table and the symbol table
     let strtab = pe_file
         .header
         .coff_header
-        .strings(&img_data.as_slice())
+        .strings(img_data.as_slice())
         .unwrap()
         .unwrap();
     let symbols = pe_file
         .header
         .coff_header
-        .symbols(&img_data.as_slice())
+        .symbols(img_data.as_slice())
         .unwrap()
         .unwrap();
 
@@ -208,29 +209,27 @@ pub fn load_unwind_table() -> Result<(), uefi::Error> {
     let _ = UNWIND_TABLE.get_or_init(|| {
         let mut tbl: Vec<UnwindEntry> = Vec::new();
 
-        for func in exception_data.functions() {
-            if let Ok(f) = func {
-                let unwind = exception_data
-                    .get_unwind_info(f, pe_file.sections.as_slice())
-                    .unwrap();
+        for func in exception_data.functions().flatten() {
+            let unwind = exception_data
+                .get_unwind_info(func, pe_file.sections.as_slice())
+                .unwrap();
 
-                let start_addr = f.begin_address as usize;
-                let end_addr = f.end_address as usize;
+            let start_addr = func.begin_address as usize;
+            let end_addr = func.end_address as usize;
 
-                let tbl_entry = UnwindEntry {
-                    start: start_addr,
-                    end: end_addr,
-                    prolog: unwind.size_of_prolog,
-                    codes: unwind.unwind_codes().filter_map(|f| f.ok()).collect(),
-                    name: sym_map.get(&start_addr).cloned(),
-                };
+            let tbl_entry = UnwindEntry {
+                start: start_addr,
+                end: end_addr,
+                prolog: unwind.size_of_prolog,
+                codes: unwind.unwind_codes().filter_map(|code| code.ok()).collect(),
+                name: sym_map.get(&start_addr).cloned(),
+            };
 
-                let tbl_run = tbl_entry.relocate(*RUNTIME_ADDR.get().unwrap());
-                let tbl_load = tbl_entry.relocate(*LOAD_ADDR.get().unwrap());
+            let tbl_run = tbl_entry.relocate(*RUNTIME_ADDR.get().unwrap());
+            let tbl_load = tbl_entry.relocate(*LOAD_ADDR.get().unwrap());
 
-                tbl.push(tbl_run);
-                tbl.push(tbl_load);
-            }
+            tbl.push(tbl_run);
+            tbl.push(tbl_load);
         }
 
         // We need to half the number of entries because we make 2, for each frame

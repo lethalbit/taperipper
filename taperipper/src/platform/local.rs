@@ -2,14 +2,13 @@
 // Implementation inspired by mycelium (https://github.com/hawkw/mycelium)
 // by Eliza Weisman.
 //
-//
 
 use core::{
     any,
     arch::asm,
     fmt,
     marker::PhantomPinned,
-    ops::{Deref, DerefMut},
+    // ops::{Deref, DerefMut},
     pin::Pin,
     ptr,
     sync::atomic::{AtomicPtr, AtomicUsize, Ordering},
@@ -54,6 +53,7 @@ impl CoreLocals {
 
     // Create a new CoreLocals object full of null pointers
     const fn new() -> Self {
+        #[allow(clippy::declare_interior_mutable_const)]
         const LOCAL_SLOT_INIT: AtomicPtr<()> = AtomicPtr::new(ptr::null_mut());
         Self {
             _self: ptr::null(),

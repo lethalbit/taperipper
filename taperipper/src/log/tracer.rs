@@ -84,6 +84,7 @@ where
     for<'a> <S as LogOutput<'a>>::Writer: SetFormatting,
     S: Default,
 {
+    #[allow(unused)]
     pub fn new() -> Self {
         Self {
             pri_con: Output::new(P::default()),

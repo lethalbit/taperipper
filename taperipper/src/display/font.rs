@@ -22,12 +22,12 @@ pub struct FramebufferFont<'a> {
 impl<'a> FramebufferFont<'a> {
     pub const fn new(normal: BdfFont<'a>, bold: BdfFont<'a>, italic: BdfFont<'a>) -> Self {
         Self {
-            bold: bold,
-            italic: italic,
+            bold,
+            italic,
             height: (normal.ascent + normal.descent) as usize,
             // XXX(aki): This is kinda janky but it's monospace so should be the same for all
             width: normal.glyphs[0].device_width as usize,
-            normal: normal,
+            normal,
         }
     }
 
@@ -46,31 +46,30 @@ impl<'a> FramebufferFont<'a> {
             _ => &self.normal,
         }
     }
-
-    pub fn normal(&self) -> &BdfFont<'a> {
-        &self.normal
-    }
-
-    pub fn bold(&self) -> &BdfFont<'a> {
-        &self.normal
-    }
 }
 
+#[allow(unused)]
 pub const IOSEVKAFIXED_8: FramebufferFont<'static> = FramebufferFont::new(
     IOSEVKAFIXED_EXTENDEDTHIN_8,
     IOSEVKAFIXED_EXTENDEDBOLD_8,
     IOSEVKAFIXED_EXTENDEDITALIC_8,
 );
+
+#[allow(unused)]
 pub const IOSEVKAFIXED_16: FramebufferFont<'static> = FramebufferFont::new(
     IOSEVKAFIXED_EXTENDEDTHIN_16,
     IOSEVKAFIXED_EXTENDEDBOLD_16,
     IOSEVKAFIXED_EXTENDEDITALIC_16,
 );
+
+#[allow(unused)]
 pub const IOSEVKAFIXED_24: FramebufferFont<'static> = FramebufferFont::new(
     IOSEVKAFIXED_EXTENDEDTHIN_24,
     IOSEVKAFIXED_EXTENDEDBOLD_24,
     IOSEVKAFIXED_EXTENDEDITALIC_24,
 );
+
+#[allow(unused)]
 pub const IOSEVKAFIXED_32: FramebufferFont<'static> = FramebufferFont::new(
     IOSEVKAFIXED_EXTENDEDTHIN_32,
     IOSEVKAFIXED_EXTENDEDBOLD_32,

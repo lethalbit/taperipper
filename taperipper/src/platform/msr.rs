@@ -11,9 +11,10 @@ pub struct Msr {
 }
 
 impl Msr {
+    #[allow(unused)]
     pub const fn new(reg: u32) -> Self {
         Self {
-            reg: reg,
+            reg,
             name: None,
             _t: PhantomData,
         }
@@ -21,7 +22,7 @@ impl Msr {
 
     pub const fn with_name(reg: u32, name: &'static str) -> Self {
         Self {
-            reg: reg,
+            reg,
             name: Some(name),
             _t: PhantomData,
         }

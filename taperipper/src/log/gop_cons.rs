@@ -16,6 +16,7 @@ pub struct GOPConsole {
 }
 
 impl GOPConsole {
+    #[allow(unused)]
     pub fn new() -> Self {
         Self {
             framebuffer: Arc::new(RwLock::new(Framebuffer::default())),
@@ -26,6 +27,7 @@ impl GOPConsole {
         Self { framebuffer }
     }
 
+    #[allow(unused)]
     pub fn from_uefi(gfx: ScopedProtocol<GraphicsOutput>) -> Self {
         Self {
             framebuffer: Arc::new(RwLock::new(Framebuffer::from_uefi(gfx))),

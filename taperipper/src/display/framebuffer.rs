@@ -253,10 +253,10 @@ impl DrawTarget for Framebuffer {
                 raw_framebuffer[offset + 1] = color.g();
                 // Swap B and R depending if the framebuffer is in RGB or BGR
                 if self.pix_format == PixelFormat::Rgb {
-                    raw_framebuffer[offset + 0] = color.r();
+                    raw_framebuffer[offset] = color.r();
                     raw_framebuffer[offset + 2] = color.b();
                 } else if self.pix_format == PixelFormat::Bgr {
-                    raw_framebuffer[offset + 0] = color.b();
+                    raw_framebuffer[offset] = color.b();
                     raw_framebuffer[offset + 2] = color.r();
                 }
             }

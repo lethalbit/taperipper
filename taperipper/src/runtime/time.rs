@@ -84,7 +84,7 @@ pub fn init_timer() {
     debug!("Initializing global timer");
     let timer = MAITAKE_TIMER.get_or_init(|| Timer::new(new_clock()));
     // TODO(aki): Do we want to panic here or stuff this into the init call above so it only happens once?
-    time::set_global_timer(&timer).expect("Global timer initialization called more than once!");
+    time::set_global_timer(timer).expect("Global timer initialization called more than once!");
 }
 
 pub fn timer() -> &'static Timer {

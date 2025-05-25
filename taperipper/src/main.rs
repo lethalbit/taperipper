@@ -8,7 +8,6 @@
 )]
 
 use maitake::time;
-use runtime::executor;
 use std::{
     panic,
     str::FromStr,
@@ -107,13 +106,10 @@ fn main() {
         runtime::panic::post_init_panic(panic_info)
     }));
 
-    if cfg!(feature = "stack-unwinding") {
-        if let Err(err) = info::load_unwind_table() {
-            warn!(
-                "Unable to load unwind information, stack traces on panic will not be available!"
-            );
-            warn!("Error: {err:?}");
-        }
+    #[cfg(feature = "stack-unwinding")]
+    if let Err(err) = info::load_unwind_table() {
+        warn!("Unable to load unwind information, stack traces on panic will not be available!");
+        warn!("Error: {err:?}");
     }
 
     debug!("UEFI Version: {}", system::uefi_revision());

@@ -75,6 +75,7 @@ pub trait SetFormatting {
     fn set_style(&mut self, style: Style);
     fn get_style(&self) -> Style;
 
+    #[allow(unused)]
     fn with_fg_color(&mut self, color: Color) -> WithFormatting<'_, Self>
     where
         Self: fmt::Write + Sized,
@@ -90,6 +91,7 @@ pub trait SetFormatting {
         }
     }
 
+    #[allow(unused)]
     fn with_bg_color(&mut self, color: Color) -> WithFormatting<'_, Self>
     where
         Self: fmt::Write + Sized,
@@ -105,6 +107,7 @@ pub trait SetFormatting {
         }
     }
 
+    #[allow(unused)]
     fn with_colors(&mut self, fg_color: Color, bg_color: Color) -> WithFormatting<'_, Self>
     where
         Self: fmt::Write + Sized,
@@ -121,6 +124,7 @@ pub trait SetFormatting {
         }
     }
 
+    #[allow(unused)]
     fn with_bold(&mut self) -> WithFormatting<'_, Self>
     where
         Self: fmt::Write + Sized,
@@ -136,6 +140,7 @@ pub trait SetFormatting {
         }
     }
 
+    #[allow(unused)]
     fn with_underline(&mut self) -> WithFormatting<'_, Self>
     where
         Self: fmt::Write + Sized,
@@ -151,6 +156,7 @@ pub trait SetFormatting {
         }
     }
 
+    #[allow(unused)]
     fn with_inverted(&mut self) -> WithFormatting<'_, Self>
     where
         Self: fmt::Write + Sized,
@@ -166,6 +172,7 @@ pub trait SetFormatting {
         }
     }
 
+    #[allow(unused)]
     fn with_italic(&mut self) -> WithFormatting<'_, Self>
     where
         Self: fmt::Write + Sized,
