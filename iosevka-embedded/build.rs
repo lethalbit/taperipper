@@ -72,7 +72,7 @@ fn main() {
 
                     let feat_weight = format!("feature = \"{}\", ", font_weight.to_lowercase());
                     let feat_style = format!("feature = \"{}\", ", font_style.to_lowercase());
-                    let feat_size = format!("feature = \"size_{}\"", font_size);
+                    let feat_size = format!("feature = \"size_{font_size}\"");
 
                     writeln!(
                         &mut font_rs,
