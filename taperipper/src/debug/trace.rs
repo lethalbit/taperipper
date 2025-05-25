@@ -7,7 +7,7 @@
 
 use core::{arch::asm, ffi::c_void, fmt};
 
-use tracing::{debug, warn};
+use tracing::{debug, trace, warn};
 
 use crate::debug::info;
 
@@ -43,9 +43,6 @@ impl Trace {
         // We use this to find the unwind frame then we can walk the stack
         let ip = Self::new as usize;
 
-        // Set up frame storage
-        let mut frames: Vec<Frame> = Vec::new();
-
         // Capture the stack pointer
         let mut sp: usize = 0;
         unsafe {
@@ -55,6 +52,11 @@ impl Trace {
                 options(att_syntax, nostack)
             );
         }
+
+        trace!("Trace::new() - Creating backtrace. ip={ip:#018x} sp={sp:#018x}");
+
+        // Set up frame storage
+        let mut frames: Vec<Frame> = Vec::new();
 
         let unwind_info = info::unwind_entry_for(ip);
         debug!("Unwind info for {:#018x}: {:?}", ip, unwind_info);
