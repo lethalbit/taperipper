@@ -1,16 +1,71 @@
 // SPDX-License-Identifier: BSD-3-Clause
 
+use std::{
+    cell::Cell,
+    sync::atomic::{AtomicUsize, Ordering},
+};
+
 use maitake::{
-    scheduler::{self, StaticScheduler},
+    scheduler::{self, Injector, StaticScheduler, Stealer, TaskStub},
     task::JoinHandle,
 };
 
-use uefi::boot;
+use maitake_sync::spin::InitOnce;
 
+use crate::platform::{local, smp};
+
+pub mod executor;
 pub mod panic;
 pub mod time;
 
-pub static MAITAKE_SCHED: StaticScheduler = scheduler::new_static!();
+static CORE_SCHED: local::CoreLocal<Cell<Option<&'static StaticScheduler>>> =
+    local::CoreLocal::new(|| Cell::new(None));
+
+static RUNTIME: Runtime = {
+    const UNINITIALIZED_SCHEDS: InitOnce<StaticScheduler> = InitOnce::uninitialized();
+    Runtime {
+        cores: AtomicUsize::new(0),
+        schedulers: [UNINITIALIZED_SCHEDS; smp::MAX_CORES],
+        sched_inject: {
+            static TASK_STUB: TaskStub = TaskStub::new();
+            unsafe { Injector::new_with_static_stub(&TASK_STUB) }
+        },
+    }
+};
+
+struct Runtime {
+    cores: AtomicUsize,
+    schedulers: [InitOnce<StaticScheduler>; smp::MAX_CORES],
+    sched_inject: Injector<&'static StaticScheduler>,
+}
+
+impl Runtime {
+    fn active_cores(&self) -> usize {
+        self.cores.load(Ordering::Acquire)
+    }
+
+    fn make_scheduler(&self) -> (usize, &StaticScheduler) {
+        // Increment the number of active cores
+        let next = self.cores.fetch_add(1, Ordering::AcqRel);
+
+        // TODO(aki): This should be a Result<> so we handle next > MAX_CORES gracefully
+        assert!(
+            next < smp::MAX_CORES,
+            "Unable to make new scheduler, out of core slots ({next} > {})",
+            smp::MAX_CORES
+        );
+
+        // Initialize a scheduler for that core
+        let scheduler = self.schedulers[next].init(StaticScheduler::new());
+
+        // Return the number and the scheduler
+        (next, scheduler)
+    }
+
+    fn seize(&'static self, core: usize) -> Option<Stealer<'static, &'static StaticScheduler>> {
+        self.schedulers[core].try_get()?.try_steal().ok()
+    }
+}
 
 #[inline]
 #[track_caller]
@@ -19,21 +74,24 @@ where
     F: Future + Send + 'static,
     F::Output: Send + 'static,
 {
-    MAITAKE_SCHED.spawn(future)
+    CORE_SCHED.with(|sched_cell| {
+        // If we have a core-local scheduler spawn directly on that
+        if let Some(scheduler) = sched_cell.get() {
+            scheduler.spawn(future)
+        } else {
+            // Otherwise stuff it into the main runtime
+            RUNTIME.sched_inject.spawn(future)
+        }
+    })
 }
 
-pub fn run_scheduler() -> ! {
-    // TODO(aki):
-    // This is:
-    //  1) Not SMP-friendly, we need to figure out how to get MP executor stuff working
-    //  2) Missing UEFI event triggers for tasks, which entails
-    //    a) We need to be able to have a task wait for a specific event
-    //    b) Have said event be able to wake the task that wants it
-    loop {
-        let tick = MAITAKE_SCHED.tick();
-        let _ = time::timer().turn();
-        if !tick.has_remaining {
-            boot::stall(1);
-        }
-    }
+/// Initialize the Async runtime and
+/// create an executor for the boot core
+pub fn init() -> executor::CoreExecutor {
+    // Initialize the timer subsystem
+    time::init_timer();
+    // Initialize locals for the boot core
+    local::CoreLocals::init();
+    // Spawn a new core executor
+    executor::CoreExecutor::new()
 }

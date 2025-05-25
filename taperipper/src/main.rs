@@ -8,6 +8,7 @@
 )]
 
 use maitake::time;
+use runtime::executor;
 use std::{
     panic,
     str::FromStr,
@@ -136,7 +137,7 @@ fn main() {
 
     info!("Taperipper v{}", env!("CARGO_PKG_VERSION"));
 
-    runtime::time::init_timer();
+    let mut executor = runtime::init();
 
     runtime::spawn(async {
         loop {
@@ -157,7 +158,7 @@ fn main() {
         panic!("AWAWAWAWAWAW");
     });
 
-    runtime::run_scheduler();
+    executor.run();
 
     crate::platform::uefi::shutdown_now();
 }
