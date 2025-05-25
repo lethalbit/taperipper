@@ -17,10 +17,6 @@ pub struct UefiVars {
     pub variables: Vec<UefiVar>,
 }
 
-pub const TAPERIPPER_UUID: Uuid = Uuid::from_bytes([
-    0x8b, 0xe4, 0xdf, 0x61, 0x93, 0xca, 0x11, 0xd2, 0xaa, 0x0d, 0x00, 0xe0, 0x98, 0x03, 0x2b, 0x8c,
-]);
-
 pub mod shell {
     use clap::{ArgMatches, Command};
 
@@ -32,7 +28,7 @@ pub mod shell {
         Command::new(COMMAND_NAME)
     }
 
-    pub fn exec(args: &ArgMatches) -> utils::Result {
+    pub fn exec(_args: &ArgMatches) -> utils::Result {
         if !crate::utils::common_run_qemu(None)
             .current_dir(crate::paths::ovmf_dir())
             .status()?
@@ -56,7 +52,7 @@ pub mod run {
 
     use crate::{commands::qemu::UefiVars, utils};
 
-    use super::{TAPERIPPER_UUID, UefiVar};
+    use super::UefiVar;
 
     pub const COMMAND_NAME: &str = "run-qemu";
 
@@ -96,7 +92,7 @@ pub mod run {
             fs::create_dir_all(crate::paths::efi_boot_dir())?;
         }
 
-        let mut cfg = if !crate::paths::uefi_vars().exists() {
+        let cfg = if !crate::paths::uefi_vars().exists() {
             debug!("UEFI Variables don't exist, creating default");
             UefiVars::default()
         } else {
