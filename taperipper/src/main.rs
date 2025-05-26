@@ -4,7 +4,8 @@
     uefi_std,
     panic_payload_as_str,
     panic_can_unwind,
-    duration_constructors_lite
+    duration_constructors_lite,
+    allocator_api
 )]
 
 use maitake::time;
