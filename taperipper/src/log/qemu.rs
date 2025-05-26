@@ -9,12 +9,17 @@
 // remapped.
 
 use core::{arch::asm, fmt};
+use std::fmt::Write;
 use tracing::Metadata;
 
 use crate::{display::formatting, log::writer};
 
 #[derive(Clone, Copy, Debug, Default)]
-pub struct QEMUDebugcon {}
+pub struct QEMUDebugcon {
+    fg: formatting::Color,
+    bg: formatting::Color,
+    style: formatting::Style,
+}
 
 impl QEMUDebugcon {
     const PORT: u16 = 0xE9;
@@ -25,7 +30,11 @@ impl<'a> writer::LogOutput<'a> for QEMUDebugcon {
 
     #[inline]
     fn make_writer(&'a self) -> Self::Writer {
-        QEMUDebugcon {}
+        QEMUDebugcon {
+            fg: formatting::Color::Default,
+            bg: formatting::Color::Default,
+            style: formatting::Style::None,
+        }
     }
 
     #[cfg(debug_assertions)]
@@ -84,28 +93,35 @@ impl fmt::Write for QEMUDebugcon {
 
 impl formatting::SetFormatting for QEMUDebugcon {
     #[inline]
-    fn set_fg_color(&mut self, _color: formatting::Color) {
-        // NOP
+    fn set_fg_color(&mut self, color: formatting::Color) {
+        self.fg = color;
+        let _ = self.write_str(color.to_ansi_fg());
     }
 
     #[inline]
     fn get_fg_color(&self) -> formatting::Color {
-        formatting::Color::Default
+        self.fg
     }
 
     #[inline]
-    fn set_bg_color(&mut self, _color: formatting::Color) {
-        // NOP
+    fn set_bg_color(&mut self, color: formatting::Color) {
+        self.bg = color;
+        let _ = self.write_str(color.to_ansi_bg());
     }
 
     #[inline]
     fn get_bg_color(&self) -> formatting::Color {
-        formatting::Color::Default
+        self.bg
     }
 
     #[inline]
-    fn set_style(&mut self, _style: formatting::Style) {
-        // NOP
+    fn set_style(&mut self, style: formatting::Style) {
+        let old = self.style;
+        self.style = style;
+        let _ = match old {
+            formatting::Style::Default => self.write_str(old.ansi_rest()),
+            _ => self.write_str(style.to_ansi()),
+        };
     }
 
     #[inline]
