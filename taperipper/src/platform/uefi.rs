@@ -21,62 +21,70 @@ use uefi::{
     system,
     table::{
         self,
-        cfg::{ACPI_GUID, ACPI2_GUID, ConfigTableEntry, SMBIOS_GUID, SMBIOS3_GUID},
+        cfg::{ACPI_GUID, ACPI2_GUID, SMBIOS_GUID, SMBIOS3_GUID},
     },
 };
 use uefi_raw::protocol::misc::TimestampProperties;
 
-#[derive(Clone, Copy, Debug)]
-pub struct ExtraTables {
-    pub acpi: *const c_void,
-    pub acpi_ver: u8,
-    pub smbios: *const c_void,
-    pub smbios_ver: u8,
-}
+pub fn get_acpi_table() -> Option<(u8, *const c_void)> {
+    system::with_config_table(|table| {
+        let mut table_ptr = ptr::null();
+        let mut table_ver: u8 = 0;
 
-impl ExtraTables {
-    pub fn new(cfg_table: &[ConfigTableEntry]) -> Self {
-        let mut cfg = Self {
-            acpi: ptr::null(),
-            acpi_ver: 0,
-            smbios: ptr::null(),
-            smbios_ver: 0,
-        };
-        cfg.populate(cfg_table);
-        cfg
-    }
-
-    fn populate(&mut self, cfg_table: &[ConfigTableEntry]) {
-        for table_entry in cfg_table {
-            match table_entry.guid {
+        for entry in table {
+            match entry.guid {
                 ACPI_GUID => {
-                    if self.acpi_ver < 1 {
-                        self.acpi_ver = 1;
-                        self.acpi = table_entry.address;
+                    if table_ver < 1 {
+                        table_ver = 1;
+                        table_ptr = entry.address;
                     }
                 }
                 ACPI2_GUID => {
-                    if self.acpi_ver < 2 {
-                        self.acpi_ver = 2;
-                        self.acpi = table_entry.address;
-                    }
-                }
-                SMBIOS_GUID => {
-                    if self.smbios_ver < 1 {
-                        self.smbios_ver = 1;
-                        self.smbios = table_entry.address;
-                    }
-                }
-                SMBIOS3_GUID => {
-                    if self.smbios_ver < 3 {
-                        self.smbios_ver = 3;
-                        self.smbios = table_entry.address;
+                    if table_ver < 2 {
+                        table_ver = 2;
+                        table_ptr = entry.address;
                     }
                 }
                 _ => {}
             }
         }
-    }
+
+        if table_ptr.is_null() {
+            None
+        } else {
+            Some((table_ver, table_ptr))
+        }
+    })
+}
+
+pub fn get_smbios_table() -> Option<(u8, *const c_void)> {
+    system::with_config_table(|table| {
+        let mut table_ptr = ptr::null();
+        let mut table_ver: u8 = 0;
+
+        for entry in table {
+            match entry.guid {
+                SMBIOS_GUID => {
+                    if table_ver < 1 {
+                        table_ver = 1;
+                        table_ptr = entry.address;
+                    }
+                }
+                SMBIOS3_GUID => {
+                    if table_ver < 3 {
+                        table_ver = 3;
+                        table_ptr = entry.address;
+                    }
+                }
+                _ => {}
+            }
+        }
+        if table_ptr.is_null() {
+            None
+        } else {
+            Some((table_ver, table_ptr))
+        }
+    })
 }
 
 pub fn init_uefi() {
