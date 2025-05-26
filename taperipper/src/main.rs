@@ -79,8 +79,6 @@ fn main() {
         runtime::panic::pre_init_panic(panic_info)
     }));
 
-    let ext_tables = system::with_config_table(crate::platform::uefi::ExtraTables::new);
-
     // Initialize a Framebuffer, it *might* be empty if our GOP initialization fails
     let fb = if let Ok(gop) =
         platform::uefi::init_graphics(Framebuffer::MAX_WIDTH, Framebuffer::MAX_HEIGHT)
@@ -115,8 +113,13 @@ fn main() {
     debug!("UEFI Version: {}", system::uefi_revision());
     debug!("Firmware Vendor: {}", system::firmware_vendor());
     debug!("Firmware Version: {}", system::firmware_revision());
-    debug!("ACPI Address: {:#018x}", ext_tables.acpi as usize);
-    debug!("SMBIOS Address: {:#018x}", ext_tables.smbios as usize);
+
+    // Initialize ACPI and SMBIOS tables
+    platform::acpi::init_tables();
+
+    if let Some(table) = platform::uefi::get_smbios_table() {
+        debug!("SMBIOS Address: {:#018x}", table.1 as usize);
+    }
 
     if fb.read().unwrap().is_valid() {
         let fb_size_pixels = (fb.read().unwrap().width(), fb.read().unwrap().height());
