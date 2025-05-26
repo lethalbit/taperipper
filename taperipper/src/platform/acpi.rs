@@ -42,6 +42,29 @@ pub fn init_tables() {
 
         let tbl = unsafe { acpi::AcpiTables::from_rsdp(handler, address as usize).unwrap() };
 
+        if let Some(proc_info) = tbl.platform_info().ok().and_then(|pi| pi.processor_info) {
+            let boot_proc = proc_info.boot_processor;
+            let ap_procs = proc_info.application_processors;
+            let ap_count = ap_procs.len();
+            trace!(
+                "Boot processor: id={} state={:?}",
+                boot_proc.processor_uid, boot_proc.state
+            );
+
+            trace!("We have {ap_count} application processors:");
+            if ap_count > platform::smp::MAX_CORES - 1 {
+                warn!(
+                    "Total number of processors exceeds supported core count! ({} > {})",
+                    ap_count + 1, // Count the boot core
+                    platform::smp::MAX_CORES
+                );
+            }
+
+            for ap in ap_procs.iter() {
+                trace!(" * id={:04} state={:?}", ap.processor_uid, ap.state);
+            }
+        }
+
         ACPI_TABLES.init(Mutex::new(tbl));
     } else {
         warn!("Was unable to initialize ACPI Tables!");
