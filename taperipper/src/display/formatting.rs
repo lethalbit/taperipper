@@ -49,6 +49,60 @@ pub const THEME_ROSE_PINE_MOON: &[(u8, u8, u8)] = &[
     (224, 222, 244), // #e0def4 | Color::BrightWhite
 ];
 
+impl Default for Color {
+    fn default() -> Self {
+        Color::Default
+    }
+}
+
+impl Color {
+    pub fn to_ansi_fg(&self) -> &str {
+        match self {
+            Color::Default => "\x1b[0m",
+            Color::Black => "\x1b[0;30m",
+            Color::Red => "\x1b[0;31",
+            Color::Green => "\x1b[0;32m",
+            Color::Yellow => "\x1b[0;33m",
+            Color::Blue => "\x1b[0;34m",
+            Color::Magenta => "\x1b[0;35m",
+            Color::Cyan => "\x1b[0;36m",
+            Color::White => "\x1b[0;37m",
+            Color::BrightBlack => "\x1b[0;90m",
+            Color::BrightRed => "\x1b[0;91m",
+            Color::BrightGreen => "\x1b[0;92m",
+            Color::BrightYellow => "\x1b[0;93m",
+            Color::BrightBlue => "\x1b[0;94m",
+            Color::BrightMagenta => "\x1b[0;95m",
+            Color::BrightCyan => "\x1b[0;96m",
+            Color::BrightWhite => "\x1b[0;97m",
+            _ => "\x1b[0m",
+        }
+    }
+
+    pub fn to_ansi_bg(&self) -> &str {
+        match self {
+            Color::Default => "\x1b[0m",
+            Color::Black => "\x1b[0;40m",
+            Color::Red => "\x1b[0;41",
+            Color::Green => "\x1b[0;42m",
+            Color::Yellow => "\x1b[0;43m",
+            Color::Blue => "\x1b[0;44m",
+            Color::Magenta => "\x1b[0;45m",
+            Color::Cyan => "\x1b[0;46m",
+            Color::White => "\x1b[0;47m",
+            Color::BrightBlack => "\x1b[0;100m",
+            Color::BrightRed => "\x1b[0;101m",
+            Color::BrightGreen => "\x1b[0;102m",
+            Color::BrightYellow => "\x1b[0;103m",
+            Color::BrightBlue => "\x1b[0;104m",
+            Color::BrightMagenta => "\x1b[0;105m",
+            Color::BrightCyan => "\x1b[0;106m",
+            Color::BrightWhite => "\x1b[0;107m",
+            _ => "\x1b[0m",
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[allow(dead_code)]
 pub enum Style {
@@ -58,6 +112,34 @@ pub enum Style {
     Italic,
     None,
     Underline,
+}
+
+impl Default for Style {
+    fn default() -> Self {
+        Style::None
+    }
+}
+
+impl Style {
+    pub fn ansi_rest(&self) -> &str {
+        match self {
+            Style::Bold => "\x1b[22m",
+            Style::Inverted => "\x1b[27m",
+            Style::Italic => "\x1b[33m",
+            Style::Underline => "\x1b[24m",
+            Style::Default | Style::None => "\x1b[0m",
+        }
+    }
+
+    pub fn to_ansi(&self) -> &str {
+        match self {
+            Style::Bold => "\x1b[1m",
+            Style::Inverted => "\x1b[7m",
+            Style::Italic => "\x1b[3m",
+            Style::Underline => "\x1b[4m",
+            Style::Default | Style::None => "\x1b[0m",
+        }
+    }
 }
 
 pub trait SetFormatting {
