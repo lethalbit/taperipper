@@ -30,25 +30,6 @@ pub enum Color {
     Rgb(u8, u8, u8),
 }
 
-pub const THEME_ROSE_PINE_MOON: &[(u8, u8, u8)] = &[
-    (35, 33, 54),    // #232136 | Color::Black
-    (235, 111, 146), // #eb6f92 | Color::Red
-    (62, 143, 176),  // #3e8fb0 | Color::Green
-    (246, 193, 119), // #f6c177 | Color::Yellow
-    (156, 207, 216), // #9ccfd8 | Color::Blue
-    (196, 167, 231), // #c4a7e7 | Color::Magenta
-    (234, 154, 151), // #ea9a97 | Color::Cyan
-    (224, 222, 244), // #e0def4 | Color::White
-    (110, 106, 134), // #6e6a86 | Color::BrightBlack
-    (235, 111, 146), // #eb6f92 | Color::BrightRed
-    (62, 143, 176),  // #3e8fb0 | Color::BrightGreen
-    (246, 193, 119), // #f6c177 | Color::BrightYellow
-    (156, 207, 216), // #9ccfd8 | Color::BrightBlue
-    (196, 167, 231), // #c4a7e7 | Color::BrightMagenta
-    (234, 154, 151), // #ea9a97 | Color::BrightCyan
-    (224, 222, 244), // #e0def4 | Color::BrightWhite
-];
-
 impl Default for Color {
     fn default() -> Self {
         Color::Default
@@ -385,23 +366,23 @@ fn _to_bltpixle(rgb: (u8, u8, u8)) -> BltPixel {
 impl From<Color> for BltPixel {
     fn from(color: Color) -> Self {
         match color {
-            Color::Default => _to_bltpixle(THEME_ROSE_PINE_MOON[7]),
-            Color::Black => _to_bltpixle(THEME_ROSE_PINE_MOON[0]),
-            Color::Red => _to_bltpixle(THEME_ROSE_PINE_MOON[1]),
-            Color::Green => _to_bltpixle(THEME_ROSE_PINE_MOON[2]),
-            Color::Yellow => _to_bltpixle(THEME_ROSE_PINE_MOON[3]),
-            Color::Blue => _to_bltpixle(THEME_ROSE_PINE_MOON[4]),
-            Color::Magenta => _to_bltpixle(THEME_ROSE_PINE_MOON[5]),
-            Color::Cyan => _to_bltpixle(THEME_ROSE_PINE_MOON[6]),
-            Color::White => _to_bltpixle(THEME_ROSE_PINE_MOON[7]),
-            Color::BrightBlack => _to_bltpixle(THEME_ROSE_PINE_MOON[8]),
-            Color::BrightRed => _to_bltpixle(THEME_ROSE_PINE_MOON[9]),
-            Color::BrightGreen => _to_bltpixle(THEME_ROSE_PINE_MOON[10]),
-            Color::BrightYellow => _to_bltpixle(THEME_ROSE_PINE_MOON[11]),
-            Color::BrightBlue => _to_bltpixle(THEME_ROSE_PINE_MOON[12]),
-            Color::BrightMagenta => _to_bltpixle(THEME_ROSE_PINE_MOON[13]),
-            Color::BrightCyan => _to_bltpixle(THEME_ROSE_PINE_MOON[14]),
-            Color::BrightWhite => _to_bltpixle(THEME_ROSE_PINE_MOON[15]),
+            Color::Default => _to_bltpixle(ACTIVE_THEME[7]),
+            Color::Black => _to_bltpixle(ACTIVE_THEME[0]),
+            Color::Red => _to_bltpixle(ACTIVE_THEME[1]),
+            Color::Green => _to_bltpixle(ACTIVE_THEME[2]),
+            Color::Yellow => _to_bltpixle(ACTIVE_THEME[3]),
+            Color::Blue => _to_bltpixle(ACTIVE_THEME[4]),
+            Color::Magenta => _to_bltpixle(ACTIVE_THEME[5]),
+            Color::Cyan => _to_bltpixle(ACTIVE_THEME[6]),
+            Color::White => _to_bltpixle(ACTIVE_THEME[7]),
+            Color::BrightBlack => _to_bltpixle(ACTIVE_THEME[8]),
+            Color::BrightRed => _to_bltpixle(ACTIVE_THEME[9]),
+            Color::BrightGreen => _to_bltpixle(ACTIVE_THEME[10]),
+            Color::BrightYellow => _to_bltpixle(ACTIVE_THEME[11]),
+            Color::BrightBlue => _to_bltpixle(ACTIVE_THEME[12]),
+            Color::BrightMagenta => _to_bltpixle(ACTIVE_THEME[13]),
+            Color::BrightCyan => _to_bltpixle(ACTIVE_THEME[14]),
+            Color::BrightWhite => _to_bltpixle(ACTIVE_THEME[15]),
             Color::Rgb(r, g, b) => BltPixel::new(r, g, b),
         }
     }
@@ -415,24 +396,46 @@ fn _to_rg888(rgb: (u8, u8, u8)) -> Rgb888 {
 impl From<Color> for Rgb888 {
     fn from(color: Color) -> Self {
         match color {
-            Color::Default => _to_rg888(THEME_ROSE_PINE_MOON[7]),
-            Color::Black => _to_rg888(THEME_ROSE_PINE_MOON[0]),
-            Color::Red => _to_rg888(THEME_ROSE_PINE_MOON[1]),
-            Color::Green => _to_rg888(THEME_ROSE_PINE_MOON[2]),
-            Color::Yellow => _to_rg888(THEME_ROSE_PINE_MOON[3]),
-            Color::Blue => _to_rg888(THEME_ROSE_PINE_MOON[4]),
-            Color::Magenta => _to_rg888(THEME_ROSE_PINE_MOON[5]),
-            Color::Cyan => _to_rg888(THEME_ROSE_PINE_MOON[6]),
-            Color::White => _to_rg888(THEME_ROSE_PINE_MOON[7]),
-            Color::BrightBlack => _to_rg888(THEME_ROSE_PINE_MOON[8]),
-            Color::BrightRed => _to_rg888(THEME_ROSE_PINE_MOON[9]),
-            Color::BrightGreen => _to_rg888(THEME_ROSE_PINE_MOON[10]),
-            Color::BrightYellow => _to_rg888(THEME_ROSE_PINE_MOON[11]),
-            Color::BrightBlue => _to_rg888(THEME_ROSE_PINE_MOON[12]),
-            Color::BrightMagenta => _to_rg888(THEME_ROSE_PINE_MOON[13]),
-            Color::BrightCyan => _to_rg888(THEME_ROSE_PINE_MOON[14]),
-            Color::BrightWhite => _to_rg888(THEME_ROSE_PINE_MOON[15]),
+            Color::Default => _to_rg888(ACTIVE_THEME[7]),
+            Color::Black => _to_rg888(ACTIVE_THEME[0]),
+            Color::Red => _to_rg888(ACTIVE_THEME[1]),
+            Color::Green => _to_rg888(ACTIVE_THEME[2]),
+            Color::Yellow => _to_rg888(ACTIVE_THEME[3]),
+            Color::Blue => _to_rg888(ACTIVE_THEME[4]),
+            Color::Magenta => _to_rg888(ACTIVE_THEME[5]),
+            Color::Cyan => _to_rg888(ACTIVE_THEME[6]),
+            Color::White => _to_rg888(ACTIVE_THEME[7]),
+            Color::BrightBlack => _to_rg888(ACTIVE_THEME[8]),
+            Color::BrightRed => _to_rg888(ACTIVE_THEME[9]),
+            Color::BrightGreen => _to_rg888(ACTIVE_THEME[10]),
+            Color::BrightYellow => _to_rg888(ACTIVE_THEME[11]),
+            Color::BrightBlue => _to_rg888(ACTIVE_THEME[12]),
+            Color::BrightMagenta => _to_rg888(ACTIVE_THEME[13]),
+            Color::BrightCyan => _to_rg888(ACTIVE_THEME[14]),
+            Color::BrightWhite => _to_rg888(ACTIVE_THEME[15]),
             Color::Rgb(r, g, b) => Rgb888::new(r, g, b),
         }
     }
 }
+
+// TODO(aki): Abstract the theme stuff a bit, maybe
+pub const ACTIVE_THEME: &[(u8, u8, u8)] = THEME_ROSE_PINE_MOON;
+
+pub const THEME_ROSE_PINE_MOON: &[(u8, u8, u8)] = &[
+    (35, 33, 54),    // #232136 | Color::Black
+    (235, 111, 146), // #eb6f92 | Color::Red
+    (62, 143, 176),  // #3e8fb0 | Color::Green
+    (246, 193, 119), // #f6c177 | Color::Yellow
+    (156, 207, 216), // #9ccfd8 | Color::Blue
+    (196, 167, 231), // #c4a7e7 | Color::Magenta
+    (234, 154, 151), // #ea9a97 | Color::Cyan
+    (224, 222, 244), // #e0def4 | Color::White
+    (110, 106, 134), // #6e6a86 | Color::BrightBlack
+    (235, 111, 146), // #eb6f92 | Color::BrightRed
+    (62, 143, 176),  // #3e8fb0 | Color::BrightGreen
+    (246, 193, 119), // #f6c177 | Color::BrightYellow
+    (156, 207, 216), // #9ccfd8 | Color::BrightBlue
+    (196, 167, 231), // #c4a7e7 | Color::BrightMagenta
+    (234, 154, 151), // #ea9a97 | Color::BrightCyan
+    (224, 222, 244), // #e0def4 | Color::BrightWhite
+];
