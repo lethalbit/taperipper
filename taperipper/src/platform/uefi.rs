@@ -17,7 +17,7 @@ use uefi::{
         },
         misc::Timestamp,
     },
-    runtime::{self, ResetType, VariableVendor},
+    runtime::{self, ResetType},
     system,
     table::{
         self,
@@ -254,18 +254,6 @@ pub fn read_slice(file_path: &str, from: u64, buff: &mut [u8]) -> Result<usize, 
         .map_err(|_| uefi::Error::new(uefi::Status::ABORTED, ()))
 }
 
-pub fn get_var(name: &str) -> Option<Box<[u8]>> {
-    let mut buf: Vec<u16> = Vec::with_capacity(name.chars().count() * 4);
-
-    let var_name = CStr16::from_str_with_buf(name, buf.as_mut_slice()).ok()?;
-
-    if let Ok(var) = runtime::get_variable_boxed(var_name, &VariableVendor::GLOBAL_VARIABLE) {
-        Some(var.0)
-    } else {
-        None
-    }
-}
-
 pub fn get_timestamp_properties() -> Result<TimestampProperties, uefi::Error> {
     let ts = get_proto::<Timestamp>()?;
     ts.get_properties()
@@ -274,4 +262,48 @@ pub fn get_timestamp_properties() -> Result<TimestampProperties, uefi::Error> {
 pub fn get_timestamp() -> u64 {
     let ts = get_proto::<Timestamp>().unwrap();
     ts.get_timestamp()
+}
+
+pub mod variables {
+    use uefi::{
+        CStr16, Guid, guid,
+        runtime::{self, VariableAttributes, VariableVendor},
+    };
+
+    pub const TAPERIPPER_UEFI_NAMESPACE: Guid = guid!("70a40a42-5ee6-4620-ad7c-97567d038a20");
+    pub const TAPERIPPER_UEFI_VENDOR: VariableVendor = VariableVendor(TAPERIPPER_UEFI_NAMESPACE);
+
+    // TODO(aki): figure out a generic-ish get_or_init
+
+    pub fn get(name: &str) -> Option<Box<[u8]>> {
+        let mut enc = name.encode_utf16().collect::<Vec<_>>();
+        enc.push(0x00);
+
+        let var_name = CStr16::from_u16_until_nul(enc.as_slice()).ok()?;
+
+        if let Ok(var) =
+            runtime::get_variable_boxed(var_name, &VariableVendor(TAPERIPPER_UEFI_NAMESPACE))
+        {
+            Some(var.0)
+        } else {
+            None
+        }
+    }
+
+    pub fn set(name: &str, data: &[u8]) {
+        let mut enc = name.encode_utf16().collect::<Vec<_>>();
+        enc.push(0x00);
+
+        let var_name = CStr16::from_u16_until_nul(enc.as_slice()).unwrap();
+
+        runtime::set_variable(
+            var_name,
+            &VariableVendor(TAPERIPPER_UEFI_NAMESPACE),
+            VariableAttributes::BOOTSERVICE_ACCESS
+                | VariableAttributes::RUNTIME_ACCESS
+                | VariableAttributes::NON_VOLATILE,
+            &data,
+        )
+        .unwrap();
+    }
 }
