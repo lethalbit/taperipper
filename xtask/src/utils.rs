@@ -129,12 +129,6 @@ pub fn common_run_qemu(efi_root: Option<&PathBuf>) -> process::Command {
             crate::paths::ovmf_file_vars().display()
         )
         .as_str(),
-        "-device",
-        format!(
-            "uefi-vars-x64,jsonfile={}",
-            crate::paths::uefi_vars().display()
-        )
-        .as_str(),
         "-m",
         "1G",
     ]);
