@@ -89,13 +89,16 @@ fn main() {
         Arc::new(RwLock::new(Framebuffer::default()))
     };
 
-    // Get the Log level from the UEFI vars, or a default level
-    let log_level = if let Some(var) = crate::platform::uefi::get_var("TAPERIPPER_LOG_LEVEL") {
-        tracing::Level::from_str(str::from_utf8(&var).unwrap_or("Debug"))
-            .unwrap_or(DEFAULT_LOG_LEVEL)
-    } else {
-        DEFAULT_LOG_LEVEL
-    };
+    let log_level = platform::uefi::variables::get("TAPERIPPER_LOG_LEVEL")
+        .and_then(|var| tracing::Level::from_str(str::from_utf8(&var).unwrap_or("Debug")).ok())
+        .or({
+            platform::uefi::variables::set(
+                "TAPERIPPER_LOG_LEVEL",
+                DEFAULT_LOG_LEVEL.as_str().as_bytes(),
+            );
+            Some(DEFAULT_LOG_LEVEL)
+        })
+        .unwrap();
 
     setup_logging(&fb, log_level);
 
