@@ -7,9 +7,10 @@ use embedded_graphics::pixelcolor::Rgb888;
 use uefi::proto::console::{gop::BltPixel, text::Color as uefi_color};
 
 // ANSI colors + RGB
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[allow(dead_code)]
 pub enum Color {
+    #[default]
     Default,
     Black,
     Red,
@@ -30,14 +31,8 @@ pub enum Color {
     Rgb(u8, u8, u8),
 }
 
-impl Default for Color {
-    fn default() -> Self {
-        Color::Default
-    }
-}
-
 impl Color {
-    pub fn to_ansi_fg(&self) -> &str {
+    pub fn as_ansi_fg(&self) -> &str {
         match self {
             Color::Default => "\x1b[0m",
             Color::Black => "\x1b[0;30m",
@@ -60,7 +55,7 @@ impl Color {
         }
     }
 
-    pub fn to_ansi_bg(&self) -> &str {
+    pub fn as_ansi_bg(&self) -> &str {
         match self {
             Color::Default => "\x1b[0m",
             Color::Black => "\x1b[0;40m",
@@ -84,21 +79,16 @@ impl Color {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[allow(dead_code)]
 pub enum Style {
     Bold,
     Default,
     Inverted,
     Italic,
+    #[default]
     None,
     Underline,
-}
-
-impl Default for Style {
-    fn default() -> Self {
-        Style::None
-    }
 }
 
 impl Style {
@@ -112,7 +102,7 @@ impl Style {
         }
     }
 
-    pub fn to_ansi(&self) -> &str {
+    pub fn as_ansi(&self) -> &str {
         match self {
             Style::Bold => "\x1b[1m",
             Style::Inverted => "\x1b[7m",

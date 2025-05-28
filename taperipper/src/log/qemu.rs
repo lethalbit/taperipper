@@ -98,7 +98,7 @@ impl formatting::SetFormatting for QEMUDebugcon {
     #[inline]
     fn set_fg_color(&mut self, color: formatting::Color) {
         self.fg = color;
-        let _ = self.write_str(color.to_ansi_fg());
+        let _ = self.write_str(color.as_ansi_fg());
     }
 
     #[inline]
@@ -109,7 +109,7 @@ impl formatting::SetFormatting for QEMUDebugcon {
     #[inline]
     fn set_bg_color(&mut self, color: formatting::Color) {
         self.bg = color;
-        let _ = self.write_str(color.to_ansi_bg());
+        let _ = self.write_str(color.as_ansi_bg());
     }
 
     #[inline]
@@ -123,7 +123,7 @@ impl formatting::SetFormatting for QEMUDebugcon {
         self.style = style;
         let _ = match old {
             formatting::Style::Default => self.write_str(old.ansi_rest()),
-            _ => self.write_str(style.to_ansi()),
+            _ => self.write_str(style.as_ansi()),
         };
     }
 
