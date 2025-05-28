@@ -15,6 +15,8 @@ use std::{
     sync::{Arc, RwLock},
 };
 use tracing::{self, debug, error, info, trace, warn};
+use tracing_core::LevelFilter;
+use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 use uefi::system;
 
 #[cfg(feature = "stack-unwinding")]
@@ -26,10 +28,7 @@ mod runtime;
 
 #[cfg(feature = "stack-unwinding")]
 use crate::debug::info;
-use crate::{
-    display::framebuffer::Framebuffer,
-    log::{ConsoleSubscriber, GOPConsole, QEMUDebugcon, TXTConsole, writer},
-};
+use crate::display::framebuffer::Framebuffer;
 
 #[cfg(debug_assertions)]
 const DEFAULT_LOG_LEVEL: tracing::Level = tracing::Level::DEBUG;
@@ -37,38 +36,29 @@ const DEFAULT_LOG_LEVEL: tracing::Level = tracing::Level::DEBUG;
 const DEFAULT_LOG_LEVEL: tracing::Level = tracing::Level::INFO;
 
 fn setup_logging(fb: &Arc<RwLock<Framebuffer>>, level: tracing::Level) {
-    // NOTE(aki): This is probably less than ideal, but *shrug*
-    #[cfg(debug_assertions)]
-    type DebugCon = QEMUDebugcon;
-    #[cfg(not(debug_assertions))]
-    type DebugCon = writer::NoOutput;
+    let fb_valid = fb.read().unwrap().is_valid();
+    let level_filter = LevelFilter::from_level(level);
 
-    type GopCon = writer::WithMaxLevel<GOPConsole>;
-    type TxtCon = writer::WithMaxLevel<TXTConsole>;
+    tracing_subscriber::registry()
+        .with(fb_valid.then(|| {
+            // Our framebuffer is valid, clear the screen then set up the layer
+            fb.write().unwrap().clear_screen();
+            log::gop_cons::framebuffer_layer(fb.clone()).with_filter(level_filter)
+        }))
+        .with((!fb_valid).then(|| {
+            // If the GOP Framebuffer is not valid, then fall back to UEFI Text mode
+            platform::uefi::set_best_stdout_mode();
 
-    // If we have a valid Framebuffer, then we can assume GOP initialized, otherwise fall back to text
-    if fb.read().unwrap().is_valid() {
-        fb.write().unwrap().clear_screen();
+            log::txt_cons::layer().with_filter(level_filter)
+        }))
+        .with(cfg!(debug_assertions).then(|| {
+            // If we are in debug mode, assume the QEMU Debug port is there
+            log::qemu::layer().with_filter(level_filter)
+        }))
+        .init();
 
-        let gop_cons = writer::WithMaxLevel::new(GOPConsole::from_framebuffer(fb.clone()), level);
-
-        let subscriber = ConsoleSubscriber::<GopCon, DebugCon>::primary_only(gop_cons)
-            .with_secondary(DebugCon::default());
-        if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
-            panic!("Unable to setup global trace handler: {err:?}");
-        }
-    } else {
-        let txt_cons = writer::WithMaxLevel::new(TXTConsole::default(), level);
-
-        let subscriber = ConsoleSubscriber::<TxtCon, DebugCon>::primary_only(txt_cons)
-            .with_secondary(DebugCon::default());
-        if let Err(err) = tracing::subscriber::set_global_default(subscriber) {
-            panic!("Unable to setup global trace handler: {err:?}");
-        }
-
-        platform::uefi::set_best_stdout_mode();
-
-        warn!("Unable to initialize Graphics Console, falling back to Text");
+    if !fb_valid {
+        warn!("Unable to initialize UEFI GOP, falling back to SimpleTextProtocol");
     }
 }
 
