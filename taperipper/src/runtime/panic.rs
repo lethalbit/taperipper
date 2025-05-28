@@ -23,7 +23,7 @@ pub fn pre_init_panic(info: &panic::PanicHookInfo<'_>) -> ! {
     // Use it to emit a desperate gasp to try to let people know whats going on
     if cfg!(debug_assertions) {
         use core::fmt::Write;
-        let mut dbgcon = crate::log::QEMUDebugcon::default();
+        let mut dbgcon = crate::log::qemu::QEMUDebugcon::default();
         let _ = writeln!(dbgcon, "Pre-init panic!");
         let _ = writeln!(dbgcon, "{panic_log}: {panic_msg}");
     }
