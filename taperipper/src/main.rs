@@ -14,9 +14,9 @@ use std::{
     str::FromStr,
     sync::{Arc, RwLock},
 };
-use tracing::{self, debug, error, info, trace, warn};
+use tracing::{self, Level, debug, error, info, trace, warn};
 use tracing_core::LevelFilter;
-use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{Layer, filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 use uefi::system;
 
 #[cfg(feature = "stack-unwinding")]
@@ -37,23 +37,32 @@ const DEFAULT_LOG_LEVEL: tracing::Level = tracing::Level::INFO;
 
 fn setup_logging(fb: &Arc<RwLock<Framebuffer>>, level: tracing::Level) {
     let fb_valid = fb.read().unwrap().is_valid();
-    let level_filter = LevelFilter::from_level(level);
+
+    let filter = Targets::new()
+        .with_default(level)
+        // Goblin is so damn noisy, turn it off
+        .with_target("goblin", LevelFilter::OFF);
 
     tracing_subscriber::registry()
         .with(fb_valid.then(|| {
             // Our framebuffer is valid, clear the screen then set up the layer
             fb.write().unwrap().clear_screen();
-            log::gop_cons::framebuffer_layer(fb.clone()).with_filter(level_filter)
+            log::gop_cons::framebuffer_layer(fb.clone()).with_filter(filter.clone())
         }))
         .with((!fb_valid).then(|| {
             // If the GOP Framebuffer is not valid, then fall back to UEFI Text mode
             platform::uefi::set_best_stdout_mode();
-
-            log::txt_cons::layer().with_filter(level_filter)
+            log::txt_cons::layer().with_filter(filter)
         }))
         .with(cfg!(debug_assertions).then(|| {
             // If we are in debug mode, assume the QEMU Debug port is there
-            log::qemu::layer().with_filter(level_filter)
+            log::qemu::layer().with_filter(
+                Targets::new()
+                    // Emit trace info to the debug console
+                    .with_default(Level::TRACE)
+                    // Goblin is so damn noisy, turn it off
+                    .with_target("goblin", LevelFilter::OFF),
+            )
         }))
         .init();
 
