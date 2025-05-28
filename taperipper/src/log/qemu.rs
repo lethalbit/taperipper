@@ -12,7 +12,10 @@ use core::{arch::asm, fmt};
 use std::fmt::Write;
 use tracing::Metadata;
 
-use crate::{display::formatting, log::writer};
+use crate::{
+    display::formatting,
+    log::{layer, writer},
+};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct QEMUDebugcon {
@@ -128,4 +131,8 @@ impl formatting::SetFormatting for QEMUDebugcon {
     fn get_style(&self) -> formatting::Style {
         formatting::Style::None
     }
+}
+
+pub fn layer<S>() -> layer::fmt::Layer<S, QEMUDebugcon> {
+    layer::fmt::Layer::<S, QEMUDebugcon>::default()
 }

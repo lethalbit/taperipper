@@ -15,7 +15,11 @@ use core::{
 use tracing::Metadata;
 use uefi::{proto::console::text::Output, table};
 
-use crate::{display::formatting, log::writer, platform};
+use crate::{
+    display::formatting,
+    log::{layer, writer},
+    platform,
+};
 
 // TODO(aki): Should probably replace AtomicPtr<> with an Arc<Mutex<>>...
 pub struct TXTConsole {
@@ -155,4 +159,8 @@ impl formatting::SetFormatting for TXTConsole {
     fn get_style(&self) -> formatting::Style {
         formatting::Style::None
     }
+}
+
+pub fn layer<S>() -> layer::fmt::Layer<S, TXTConsole> {
+    layer::fmt::Layer::<S, TXTConsole>::default()
 }

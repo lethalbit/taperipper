@@ -8,7 +8,7 @@ use uefi::{boot::ScopedProtocol, proto::console::gop::GraphicsOutput};
 
 use crate::{
     display::{formatting, framebuffer::Framebuffer},
-    log::writer,
+    log::{layer, writer},
 };
 
 pub struct GOPConsole {
@@ -101,4 +101,10 @@ impl formatting::SetFormatting for GOPConsole {
     fn get_style(&self) -> formatting::Style {
         self.framebuffer.read().unwrap().get_style()
     }
+}
+
+pub fn framebuffer_layer<S>(
+    framebuffer: Arc<RwLock<Framebuffer>>,
+) -> layer::fmt::Layer<S, GOPConsole> {
+    layer::fmt::Layer::<S, GOPConsole>::from_writer(GOPConsole::from_framebuffer(framebuffer))
 }
