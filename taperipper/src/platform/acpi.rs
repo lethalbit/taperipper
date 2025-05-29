@@ -37,7 +37,7 @@ pub static ACPI_TABLES: InitOnce<Mutex<AcpiTables<Handler>>> = InitOnce::uniniti
 pub fn init_tables() {
     let handler = Handler {};
 
-    if let Some((version, address)) = platform::uefi::get_acpi_table() {
+    if let Some((version, address)) = platform::uefi::tables::get_acpi() {
         debug!("ACPI v{} Address: {:#018x}", version, address as usize);
 
         let tbl = unsafe { acpi::AcpiTables::from_rsdp(handler, address as usize).unwrap() };

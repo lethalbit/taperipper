@@ -51,7 +51,7 @@ fn setup_logging(fb: &Arc<RwLock<Framebuffer>>, level: tracing::Level) {
         }))
         .with((!fb_valid).then(|| {
             // If the GOP Framebuffer is not valid, then fall back to UEFI Text mode
-            platform::uefi::set_best_stdout_mode();
+            platform::uefi::output::set_best_stdout_mode();
             log::txt_cons::layer().with_filter(filter)
         }))
         .with(cfg!(debug_assertions).then(|| {
@@ -81,7 +81,7 @@ fn main() {
 
     // Initialize a Framebuffer, it *might* be empty if our GOP initialization fails
     let fb = if let Ok(gop) =
-        platform::uefi::init_graphics(Framebuffer::MAX_WIDTH, Framebuffer::MAX_HEIGHT)
+        platform::uefi::output::init_graphics(Framebuffer::MAX_WIDTH, Framebuffer::MAX_HEIGHT)
     {
         Arc::new(RwLock::new(Framebuffer::from_uefi(gop)))
     } else {
@@ -120,7 +120,7 @@ fn main() {
     // Initialize ACPI and SMBIOS tables
     platform::acpi::init_tables();
 
-    if let Some(table) = platform::uefi::get_smbios_table() {
+    if let Some(table) = platform::uefi::tables::get_smbios() {
         debug!("SMBIOS Address: {:#018x}", table.1 as usize);
     }
 
@@ -162,5 +162,5 @@ fn main() {
 
     executor.run();
 
-    crate::platform::uefi::shutdown_now();
+    crate::platform::uefi::system::shutdown_now();
 }
